@@ -8,7 +8,7 @@ class UserInfo(AbstractBaseUser, PermissionsMixin):
     userLevel = models.CharField(max_length=100)
     email = models.EmailField(max_length=100, unique=True)
     passwordAttemptsLeft = models.PositiveIntegerField(default = 3, validators=[MaxValueValidator(3)])
-    authenticatedDevices = models.JSONField(allow_null=True)
+    authenticatedDevices = models.JSONField()
     USERNAME_FIELD = 'username'
     REQUIRED_FIELDS = []
     # May need this later - from following tutorial
