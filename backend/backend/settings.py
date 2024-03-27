@@ -1,3 +1,4 @@
+#Test comment for gitignore
 """
 Django settings for backend project.
 
