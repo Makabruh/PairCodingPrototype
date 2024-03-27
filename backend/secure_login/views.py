@@ -59,7 +59,7 @@ class UserLoginAPIView(APIView):
                 if authenticatedUser:
                     #Create a CSRF token for the user
                     #! This may break the code
-                    #login(request, user)
+                    login(request, authenticatedUser)
                     csrf_token = get_token(request)
                     return Response({"csrf_token": csrf_token}, status=status.HTTP_200_OK)
                 else:
