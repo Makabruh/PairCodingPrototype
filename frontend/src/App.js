@@ -1,6 +1,6 @@
 import './App.css';
-import Login from './components/LoginDG';
-import Register from './components/RegisterDG';
+import Login from './components/Login';
+import Register from './components/Register';
 import Home from './components/Home';
 import LinkPage from './components/LinkPage';
 import Layout from './components/Layout';

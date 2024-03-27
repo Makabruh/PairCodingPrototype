@@ -48,7 +48,7 @@ class UserLoginAPIView(APIView):
         user = UserInfo.objects.filter(username=username)
         #? This could possibly just be if user
         #If a user object is found
-        if user is not None:
+        if user:
             #Instantiate the serializer
             serializer = LoginSerializer(data=request.data)
             #Check the data format with the serializer
@@ -56,10 +56,10 @@ class UserLoginAPIView(APIView):
                 #Call the check_user function within the serializer
                 authenticatedUser = serializer.check_user(request.data)
                 # Check that there is a user object returned from this function
-                if authenticatedUser is not None:
+                if authenticatedUser:
                     #Create a CSRF token for the user
                     #! This may break the code
-                    login(request, user)
+                    #login(request, user)
                     csrf_token = get_token(request)
                     return Response({"csrf_token": csrf_token}, status=status.HTTP_200_OK)
                 else:

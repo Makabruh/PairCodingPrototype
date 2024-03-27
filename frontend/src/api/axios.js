@@ -18,11 +18,11 @@ const client = axios.create({
     withCredentials: true 
 });
   
-  //Get CSRF token from cookie
-  const csrfToken = document.cookie.split('; ')
-    .find(cookie => cookie.startsWith('csrftoken='))
-    .split('=')[1];
+  // //Get CSRF token from cookie
+  // const csrfToken = document.cookie.split('; ')
+  //   .find(cookie => cookie.startsWith('csrftoken='))
+  //   .split('=')[1];
   
   //Include the CSRF token in the headers
-  client.defaults.headers.common['X-CSRFToken'] = csrfToken;
+  // client.defaults.headers.common['X-CSRFToken'] = csrfToken;
   
