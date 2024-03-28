@@ -1,16 +1,15 @@
 import {useRef, useState, useEffect, useContext} from 'react';
-//Created a global state with use context for the app
-import AuthContext from "../context/AuthProvider"
 import axios from '../api/axios';
+//Created a global state with use context for the app
 import useAuth from '../hooks/useAuth';
 import { Link, useNavigate, useLocation} from 'react-router-dom';
 
 const bcrypt = require('bcryptjs');
 const LOGIN_URL = '/login';
-const USERNAME_URL = '/username';
 
 const Login = () => {
     const {auth, setAuth} = useAuth()
+    //? const {auth, setAuth} = useContext(useAuth) ???
 
     // Navigating back to desired url after login
     const navigate = useNavigate();
