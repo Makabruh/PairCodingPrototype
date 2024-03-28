@@ -1,6 +1,9 @@
 import { Link } from "react-router-dom"
+import useAuth from "../hooks/useAuth"
 
 const LinkPage = () => {
+    const {auth} = useAuth()
+    console.log(auth?.user)
     return (
         <section>
             <h1>Links</h1>

@@ -58,9 +58,9 @@ class UserLoginAPIView(APIView):
                 # Check that there is a user object returned from this function
                 if authenticatedUser:
                     #Create a CSRF token for the user
-                    #! This may break the code
                     login(request, authenticatedUser)
                     csrf_token = get_token(request)
+                    #TODO - Send back the userLevel as well to be aliased to roles in the frontend?
                     return Response({"csrf_token": csrf_token}, status=status.HTTP_200_OK)
                 else:
                     return Response({"message": "Password does not match"}, status=status.HTTP_401_UNAUTHORIZED)

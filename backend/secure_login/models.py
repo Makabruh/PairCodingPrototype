@@ -4,6 +4,7 @@ from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from django.core.validators import MaxValueValidator
 
 class UserInfoManager(BaseUserManager):
+    #TODO - I think all of this could be removed leaving just the BaseUserManager
     def create_user(self, username, password=None):
         print("in the userinfomanager")
         if not username:

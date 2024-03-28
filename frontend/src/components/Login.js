@@ -57,7 +57,8 @@ const Login = () => {
             //Get the CSRF token from the response data
             const accessToken = response?.data?.csrf_token;
             //Saved in the global context
-            setAuth({user, pwd, accessToken});
+            //TODO - Add roles from userLevel fetched from backend ?
+            setAuth({user, pwd, roles: "authenticated", accessToken});
             setUser('');
             setPwd('');
             setSuccess(true); 
