@@ -1,16 +1,15 @@
 import { useNavigate, Link } from "react-router-dom";
 import { useContext } from "react";
 import AuthContext from "../context/AuthProvider";
+import axios from "../api/axios";
 
-LOGOUT_URL = "/logout";
+const LOGOUT_URL = "/logout";
 
 const Home = () => {
     const { setAuth } = useContext(AuthContext);
     const navigate = useNavigate();
 
     const logout = async () => {
-        
-        e.preventDefault();
         const response = await axios.post(LOGOUT_URL, {withCredentials: true});
         // if used in more components, this should be in context 
         // axios to /logout endpoint 
