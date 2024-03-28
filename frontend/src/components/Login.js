@@ -9,7 +9,6 @@ const LOGIN_URL = '/login';
 
 const Login = () => {
     const {auth, setAuth} = useAuth()
-    //? const {auth, setAuth} = useContext(useAuth) ???
 
     // Navigating back to desired url after login
     const navigate = useNavigate();
