@@ -59,6 +59,7 @@ class UserLoginAPIView(APIView):
                 if authenticatedUser:
                     #Create a CSRF token for the user
                     login(request, authenticatedUser)
+                    #! Try removing this line because login MAY return a csrf token
                     csrf_token = get_token(request)
                     #TODO - Send back the userLevel as well to be aliased to roles in the frontend?
                     return Response({"csrf_token": csrf_token}, status=status.HTTP_200_OK)

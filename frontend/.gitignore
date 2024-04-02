@@ -3,7 +3,7 @@
 ../backend/backend/settings.py
 
 # dependencies
-/virt
+../virt
 /node_modules
 /.pnp
 .pnp.js
