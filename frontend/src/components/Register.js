@@ -294,7 +294,7 @@ const Register = () => {
                     onBlur={() => setMatchFocus(false)}
                 />
                 {/* Info message for the password field */}
-                <p id="confirmnote" className={pwdFocus && !validPwd ? "instructions" : "offscreen"}>
+                <p id="confirmnote" className={matchFocus && !validPwd ? "instructions" : "offscreen"}>
                     <FontAwesomeIcon icon={faInfoCircle} />
                     Must match password
                 </p>

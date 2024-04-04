@@ -37,6 +37,8 @@ const Login = () => {
     }, [user, pwd])
 
     useEffect(() => {
+        localStorage.setItem("auth", auth);
+        localStorage.setItem("auth.accessToken", auth.accessToken);
         console.log("auth:", auth);
         console.log("User:", auth.user);
         console.log("Password:", auth.password);
@@ -59,6 +61,10 @@ const Login = () => {
             //Saved in the global context
             //TODO - Add roles from userLevel fetched from backend ?
             setAuth({user, pwd, roles: "authenticated", accessToken});
+            //localStorage.setItem(auth);
+            // localStorage.setItem("auth.user", user);
+            // localStorage.setItem("auth.roles", "authenticated");
+            // localStorage.setItem("auth.accessToken", accessToken);
             setUser('');
             setPwd('');
             setSuccess(true); 
@@ -94,7 +100,7 @@ const Login = () => {
                     <h1>Logged in</h1>
                     <br/>
                     <p>
-                        <a href="#">Home</a>
+                    <Link to="/">Home</Link>
                     </p>
                 </section>
             ) : (

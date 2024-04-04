@@ -1,9 +1,15 @@
 import { Link } from "react-router-dom"
 import useAuth from "../hooks/useAuth"
+import getCookie from "../common/getCookie"
 
 const LinkPage = () => {
-    const {auth} = useAuth()
-    console.log(auth?.user)
+
+    const cookie = getCookie('csrftoken');
+
+    const {auth, setAuth} = useAuth()
+    console.log("cookie: " + cookie)
+    console.log("auth: " + auth?.user)
+
     return (
         <section>
             <h1>Links</h1>
