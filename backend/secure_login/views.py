@@ -58,9 +58,12 @@ class UserLoginAPIView(APIView):
                 # Check that there is a user object returned from this function
                 if authenticatedUser:
                     #Create a CSRF token for the user
+                    # Login creates a django session in which we can store data
                     login(request, authenticatedUser)
                     #! Try removing this line because login MAY return a csrf token
                     csrf_token = get_token(request)
+                    print(user)
+                    #request.session['userid'] = user.userid
                     #TODO - Send back the userLevel as well to be aliased to roles in the frontend?
                     return Response({"csrf_token": csrf_token}, status=status.HTTP_200_OK)
                 else:
@@ -82,4 +85,23 @@ class UserView(APIView):
 
     def get(self, request):
         serializer = UserSerializer(request.user)
+        serializerTest = RegisterSerializer(request.user)
+        print(serializerTest.data)
         return Response({'user': serializer.data}, status=status.HTTP_200_OK)
+    
+class AuthDetails(APIView):
+    permission_classes = (permissions.IsAuthenticated,)
+    authentication_classes = (SessionAuthentication,)
+
+    def get(self, request):
+        csrf_token = get_token(request)
+        authSerializer = AuthSerializer(request.user)
+        print(authSerializer.data)
+        print(authSerializer.data['username'])
+        username = authSerializer.data['username']
+        userLevel = authSerializer.data['userLevel']
+        email = authSerializer.data['email']
+        return Response({"username": username, "userLevel": userLevel, "email": email}, status=status.HTTP_200_OK)
+        #Get the token and the sessionid from Django's session
+        #Compare the values
+        #If the same, return authentication details of user (username, email, userLevel)

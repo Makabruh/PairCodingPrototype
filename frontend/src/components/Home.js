@@ -2,12 +2,14 @@ import { useNavigate, Link } from "react-router-dom";
 import { useContext } from "react";
 import AuthContext from "../context/AuthProvider";
 import axios from "../api/axios";
-import getCookie from "../common/getCookie"
+import getCookie from "../common/getCookie";
+import getAuthFromBackend from "../hooks/getAuthFromBackend";
 
 const LOGOUT_URL = "/logout";
 
 const Home = () => {
     const { auth, setAuth } = useContext(AuthContext);
+    const authTest = getAuthFromBackend();
     //Using local storage to update
     const authTestObject = localStorage.getItem("auth");
     // const authTest = localStorage.getItem("auth.user");

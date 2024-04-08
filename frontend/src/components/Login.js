@@ -48,7 +48,6 @@ const Login = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            //Failing at this block
             const response = await axios.post(LOGIN_URL, 
                 JSON.stringify({ username: user, password: pwd}),
                 {
@@ -61,10 +60,6 @@ const Login = () => {
             //Saved in the global context
             //TODO - Add roles from userLevel fetched from backend ?
             setAuth({user, pwd, roles: "authenticated", accessToken});
-            //localStorage.setItem(auth);
-            // localStorage.setItem("auth.user", user);
-            // localStorage.setItem("auth.roles", "authenticated");
-            // localStorage.setItem("auth.accessToken", accessToken);
             setUser('');
             setPwd('');
             setSuccess(true); 
