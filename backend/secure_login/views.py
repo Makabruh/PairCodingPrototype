@@ -9,6 +9,15 @@ from django.contrib.auth.hashers import make_password
 from django.middleware.csrf import get_token
 from rest_framework.permissions import IsAuthenticated
 
+def create_session(request, username, userlevel):
+    request.session['username'] = username
+    request.session['userLevel'] = userlevel
+
+def access_session(request):
+    request.session.get('username')
+
+
+
 class UserRegistrationAPIView(APIView):
     permission_classes = (permissions.AllowAny,)
     #This view only has a post method as it is registration by creating a user
@@ -46,7 +55,6 @@ class UserLoginAPIView(APIView):
         username = request.data.get('username')
         #Check the database for the specific user object with unique username
         user = UserInfo.objects.filter(username=username)
-        #? This could possibly just be if user
         #If a user object is found
         if user:
             #Instantiate the serializer
@@ -58,10 +66,11 @@ class UserLoginAPIView(APIView):
                 # Check that there is a user object returned from this function
                 if authenticatedUser:
                     #Create a CSRF token for the user
-                    #! This may break the code
                     login(request, authenticatedUser)
+                    create_session(request, username, ["AnyUser", "Employer"])
+                    #! This token is not used, the login function aready creates a csrf token in cookie form.
                     csrf_token = get_token(request)
-                    return Response({"csrf_token": csrf_token}, status=status.HTTP_200_OK)
+                    return Response({"message": "Session Set", "csrf_token": csrf_token}, status=status.HTTP_200_OK)
                 else:
                     return Response({"message": "Password does not match"}, status=status.HTTP_401_UNAUTHORIZED)
             else:
@@ -71,14 +80,41 @@ class UserLoginAPIView(APIView):
 
 class UserLogout(APIView):
     permission_classes = (IsAuthenticated,)
+    authentication_classes = (SessionAuthentication,)
     def post(self, request):
         logout(request)
         return Response(status=status.HTTP_200_OK)
 
 class UserView(APIView):
+    # permission_classes = (permissions.AllowAny,)
     permission_classes = (permissions.IsAuthenticated,)
     authentication_classes = (SessionAuthentication,)
+    
+    def post(self, request):
+        serializer = UserSerializer(request.user)
+        session_user = request.session.get('username')
+        return Response({'user': session_user}, status=status.HTTP_200_OK)
+    
+class RestoreView(APIView):
+    # permission_classes = (permissions.AllowAny,)
+    permission_classes = (permissions.IsAuthenticated,)
+    authentication_classes = (SessionAuthentication,)
+    
+    def post(self, request):
+        serializer = UserSerializer(request.user)
+        session_user = request.session.get('username')
+        session_userlevel = request.session.get('userLevel')
+        return Response({'user': session_user, 'userlevel': session_userlevel}, status=status.HTTP_200_OK)
+    
+
+
+# TODO Testing remove afterwards
+    
+class HelloView(APIView):
+    permission_classes = (permissions.AllowAny,)
+    
+    # (IsAuthenticated,)   
 
     def get(self, request):
-        serializer = UserSerializer(request.user)
-        return Response({'user': serializer.data}, status=status.HTTP_200_OK)
+        content = {'message': 'Hello, World!'}
+        return Response(content)

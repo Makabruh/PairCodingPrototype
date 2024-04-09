@@ -7,7 +7,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import axios from '../api/axios';
 
 //Backend details
-const REGISTER_URL = '/register'
+const REGISTER_URL = '/register';
 
 //Regex statements
 //Note that email will have to be properly checked with mfa TODO
@@ -338,7 +338,7 @@ const Register = () => {
                 Already registered? <br />
                 <span className="line">
                     {/* Placeholder */}
-                    <a href="#">Sign In</a>
+                    <a href="/login">Sign In</a>
                 </span>
             </p>
         </section>

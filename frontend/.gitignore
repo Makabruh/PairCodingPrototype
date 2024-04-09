@@ -1,6 +1,7 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 # django settings file
 ../backend/backend/settings.py
+../virt/pyvenv.cfg
 
 # dependencies
 /node_modules

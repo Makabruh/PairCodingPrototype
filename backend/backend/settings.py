@@ -1,4 +1,3 @@
-#Test comment for gitignore
 """
 Django settings for backend project.
 
@@ -15,6 +14,10 @@ from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# "C:\Users\danie\AppData\Local\Programs\Python\Python312"
+
+
 
 
 # Quick-start development settings - unsuitable for production
@@ -38,6 +41,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'rest_framework.authtoken',
     'secure_login',
     'rest_framework',
     'corsheaders',
@@ -65,6 +69,13 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.TokenAuthentication',
     )
 }
+
+#! May need to have this active later
+# SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+
+CSRF_TRUSTED_ORIGINS = [
+    'http://localhost:3000',
+]
 
 CORS_ORIGIN_ALLOW_ALL = True
 CORS_ALLOWED_ORIGINS = [
@@ -104,7 +115,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'pairprototypedb',
         'USER': 'root',
-        'PASSWORD': 'rootpass',
+        'PASSWORD': 'G@r9Wr%7As#4Kd!1',
         'HOST': 'localhost',
         'PORT': '3306',
     }

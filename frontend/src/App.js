@@ -3,6 +3,7 @@ import Login from './components/Login';
 import Register from './components/Register';
 import Home from './components/Home';
 import LinkPage from './components/LinkPage';
+import CurrentUser from './components/User';
 import Layout from './components/Layout';
 import Unauthorized from './components/Unauthorized';
 import RequireAuth from './components/RequireAuth';
@@ -24,8 +25,12 @@ function App(){
         <Route path="unauthorized" element={<Unauthorized />} />
 
         {/* we want to protect these routes */}
-        <Route element={<RequireAuth />}>
-            <Route path="/" element={<Home />} />
+        <Route element={<RequireAuth allowedRoles={["AnyUser"]}/>}>
+          <Route path="/" element={<Home />} />
+        </Route>
+
+        <Route element={<RequireAuth allowedRoles={["Employer"]}/>}>
+          <Route path="user" element={<CurrentUser />} />
         </Route>
  
       </Route>
