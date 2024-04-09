@@ -36,14 +36,14 @@ const Login = () => {
         setErrMsg('');
     }, [user, pwd])
 
-    useEffect(() => {
-        localStorage.setItem("auth", auth);
-        localStorage.setItem("auth.accessToken", auth.accessToken);
-        console.log("auth:", auth);
-        console.log("User:", auth.user);
-        console.log("Password:", auth.password);
-        console.log("Access Token:", auth.accessToken);
-      }, [auth]);
+    // useEffect(() => {
+    //     localStorage.setItem("auth", auth);
+    //     localStorage.setItem("auth.accessToken", auth.accessToken);
+    //     console.log("auth:", auth);
+    //     console.log("User:", auth.user);
+    //     console.log("Password:", auth.password);
+    //     console.log("Access Token:", auth.accessToken);
+    //   }, [auth]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();

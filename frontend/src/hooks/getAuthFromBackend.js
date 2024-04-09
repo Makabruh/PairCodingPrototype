@@ -1,11 +1,22 @@
 import getCookie from "../common/getCookie";
 import axios from "../api/axios";
 
-function getAuthFromBackend(){
+async function getAuthFromBackend(){
     //Get the csrf token from the cookie
     const token = getCookie("csrftoken");
     const sessionid = getCookie("sessionid");
-    sendCookieDetails(token, sessionid);
+    // const authDetails = sendCookieDetails(token, sessionid);
+    // console.log("auth from hook: " + authDetails);
+    // return authDetails;
+    try {
+        // Wait for sendCookieDetails promise to resolve
+        const authDetails = await sendCookieDetails(token, sessionid);
+        console.log("auth from hook:", authDetails);
+        return authDetails;
+    } catch (error) {
+        console.error("Error fetching auth", error);
+        return null;
+    }
 }
 
 const sendCookieDetails = async (token, sessionid) => {
@@ -15,7 +26,7 @@ const sendCookieDetails = async (token, sessionid) => {
         const response = await axios.get(AUTH_URL, {
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`,
+                'Authorization': token,
                 'SessionID': sessionid
             },
             withCredentials: true
@@ -23,6 +34,7 @@ const sendCookieDetails = async (token, sessionid) => {
         //Get the CSRF token from the response data
         //const accessToken = response?.data?.csrf_token;
         console.log(response.data)
+        return response.data;
     }
     catch (err) {
         //If there is no error coming back from the server

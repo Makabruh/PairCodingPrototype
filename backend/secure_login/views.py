@@ -93,15 +93,28 @@ class AuthDetails(APIView):
     permission_classes = (permissions.IsAuthenticated,)
     authentication_classes = (SessionAuthentication,)
 
+    #? Need to check authorisation or is the above enough?
+
     def get(self, request):
-        csrf_token = get_token(request)
-        authSerializer = AuthSerializer(request.user)
-        print(authSerializer.data)
-        print(authSerializer.data['username'])
-        username = authSerializer.data['username']
-        userLevel = authSerializer.data['userLevel']
-        email = authSerializer.data['email']
-        return Response({"username": username, "userLevel": userLevel, "email": email}, status=status.HTTP_200_OK)
-        #Get the token and the sessionid from Django's session
+        #Get the csrf tokens from the request header and also from Django's session
+        request_token = request.headers.get('Authorization')
+        session_token = request.COOKIES.get('csrftoken')
+        print(request_token)
+        print(session_token)
         #Compare the values
-        #If the same, return authentication details of user (username, email, userLevel)
+        if request_token == session_token:
+            print("successful")
+            #If the same, return authentication details of user (username, email, userLevel)
+            #?Need to return accessToken ???
+            authSerializer = AuthSerializer(request.user)
+            username = authSerializer.data['username']
+            userLevel = authSerializer.data['userLevel']
+            email = authSerializer.data['email']
+            csrf_token = get_token(request)
+            return Response({"username": username, "userLevel": userLevel, "email": email, "accessToken": csrf_token}, status=status.HTTP_200_OK)
+        else:
+            print("not successful")
+            return Response({"message": "Potential XSS Attack"}, status=status.HTTP_403_FORBIDDEN)
+        
+       
+        

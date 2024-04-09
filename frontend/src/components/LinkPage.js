@@ -7,7 +7,7 @@ const LinkPage = () => {
     const cookie = getCookie('csrftoken');
 
     const {auth, setAuth} = useAuth()
-    console.log("cookie: " + cookie)
+    //console.log("cookie: " + cookie)
     console.log("auth: " + auth?.user)
 
     return (

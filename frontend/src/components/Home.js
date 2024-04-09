@@ -1,5 +1,5 @@
 import { useNavigate, Link } from "react-router-dom";
-import { useContext } from "react";
+import { useContext, useEffect } from "react";
 import AuthContext from "../context/AuthProvider";
 import axios from "../api/axios";
 import getCookie from "../common/getCookie";
@@ -9,11 +9,17 @@ const LOGOUT_URL = "/logout";
 
 const Home = () => {
     const { auth, setAuth } = useContext(AuthContext);
-    const authTest = getAuthFromBackend();
-    //Using local storage to update
-    const authTestObject = localStorage.getItem("auth");
-    // const authTest = localStorage.getItem("auth.user");
-    // const authTest2 = localStorage.getItem("auth.accessToken");
+
+    //This should only be running on update
+    useEffect(() => {
+        const fetchData = async () => {
+            const authTest = await getAuthFromBackend();
+            console.log("authTest:", authTest);
+        };
+    
+        fetchData();
+    }, []);
+
 
     const navigate = useNavigate();
     const cookie = getCookie('csrftoken');
@@ -26,9 +32,7 @@ const Home = () => {
         navigate('/linkpage');
     }
 
-    console.log("cookie: " + cookie)
-    console.log("auth: " + auth?.user)
-    console.log("test :" + authTestObject)
+    
 
 
     return (
