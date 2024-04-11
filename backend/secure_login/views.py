@@ -62,6 +62,8 @@ class UserLoginAPIView(APIView):
         
         access_level = query[0]["userLevel"]
         user = query[0]["username"]
+        # Get the actual user object in order to modify values from the model
+        userTest = UserInfo.objects.get(username=username)
         #If a user object is found
         if user:
             #Instantiate the serializer
@@ -70,6 +72,9 @@ class UserLoginAPIView(APIView):
             if serializer.is_valid(raise_exception=True):
                 #Call the check_user function within the serializer
                 authenticatedUser = serializer.check_user(request.data)
+                # If the account is locked, prevent the login attempt
+                if userTest.accountLocked == True:
+                    return Response({"message": "Account Locked"}, status=status.HTTP_403_FORBIDDEN)
                 # Check that there is a user object returned from this function
                 if authenticatedUser:
                     #Create a CSRF token for the user
@@ -79,6 +84,14 @@ class UserLoginAPIView(APIView):
                     csrf_token = get_token(request)
                     return Response({"userlevel": access_level, "csrf_token": csrf_token}, status=status.HTTP_200_OK)
                 else:
+                    # Modify the passwordAttemptsLeft field in the model UserInfo
+                    print("Reducing password attempts")
+                    userTest.passwordAttemptsLeft -= 1
+                    userTest.save()
+                    # If the value is 0, lock the account by changing the boolean to True
+                    if userTest.passwordAttemptsLeft == 0:
+                        userTest.accountLocked = True
+                        userTest.save()
                     return Response({"message": "Password does not match"}, status=status.HTTP_401_UNAUTHORIZED)
             else:
                 return Response({"message": "Incorrect data format"}, status=status.HTTP_400_BAD_REQUEST)

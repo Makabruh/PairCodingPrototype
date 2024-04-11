@@ -31,6 +31,7 @@ class UserInfo(AbstractBaseUser, PermissionsMixin):
     #Could make this an email field - TODO
     email = models.CharField(max_length=100, unique=True)
     passwordAttemptsLeft = models.PositiveIntegerField(default = 3, validators=[MaxValueValidator(3)])
+    accountLocked = models.BooleanField(default = False)
     # This needs to be introduced to manage previous devices but must be able to be null on sign up
     #!authenticatedDevices = models.JSONField()
     USERNAME_FIELD = 'username'
