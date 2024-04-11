@@ -50,6 +50,14 @@ class UserLoginAPIView(APIView):
     permission_classes = (permissions.AllowAny,)
     authentication_classes = (SessionAuthentication,)
 
+    def get(self, request):
+        # Create the token for login
+        csrf_token = get_token(request)
+        # Store the token for login purposes
+        # On login, it will be consumed and re-issued with the session
+        #TODO
+        return Response({"csrf_token": csrf_token}, status=status.HTTP_200_OK)
+
     def post(self, request):
         #Get the username from the data
         username = request.data.get('username')
@@ -65,7 +73,7 @@ class UserLoginAPIView(APIView):
         # Get the actual user object in order to modify values from the model
         userTest = UserInfo.objects.get(username=username)
         #If a user object is found
-        if user:
+        if user and userTest.accountLocked == False:
             #Instantiate the serializer
             serializer = LoginSerializer(data=request.data)
             #Check the data format with the serializer
@@ -73,8 +81,6 @@ class UserLoginAPIView(APIView):
                 #Call the check_user function within the serializer
                 authenticatedUser = serializer.check_user(request.data)
                 # If the account is locked, prevent the login attempt
-                if userTest.accountLocked == True:
-                    return Response({"message": "Account Locked"}, status=status.HTTP_403_FORBIDDEN)
                 # Check that there is a user object returned from this function
                 if authenticatedUser:
                     #Create a CSRF token for the user
@@ -95,6 +101,8 @@ class UserLoginAPIView(APIView):
                     return Response({"message": "Password does not match"}, status=status.HTTP_401_UNAUTHORIZED)
             else:
                 return Response({"message": "Incorrect data format"}, status=status.HTTP_400_BAD_REQUEST)
+        elif userTest.accountLocked == True:
+            return Response({"message": "Account Locked"}, status=status.HTTP_403_FORBIDDEN)
         else:
             return Response({"message": "Username not in database"}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -125,6 +133,33 @@ class RestoreView(APIView):
         session_user = request.session.get('username')
         session_userlevel = request.session.get('userLevel')
         return Response({'user': session_user, 'userlevel': session_userlevel}, status=status.HTTP_200_OK)
+    
+class PasswordResetView(APIView):
+    # Is authenticated means I need to provide csrf token
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (SessionAuthentication,)
+
+    def post(self, request):
+        #Get the current user object
+        user = request.user
+        #Fetch the data from the payload
+        #TODO - Make a serializer to do this
+        username = user.username
+        currentPassword = request.data.get('currentPassword')
+        newPassword = request.data.get('newPassword')
+
+        # Check the current details
+        authenticatedUser = authenticate(username=username, password=currentPassword)
+        if not authenticatedUser:
+            return Response({"message": "Password Incorrect"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Set the new password
+        user.set_password(newPassword)
+        user.save()
+
+        return Response({"message": "Password Changed"}, status=status.HTTP_200_OK)
+
+
     
 
 

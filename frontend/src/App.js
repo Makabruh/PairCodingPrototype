@@ -11,6 +11,7 @@ import TrainingProvider from './components/TrainingProvider';
 import Layout from './components/Layout';
 import Unauthorized from './components/Unauthorized';
 import RequireAuth from './components/RequireAuth';
+import PasswordReset from './components/PasswordReset';
 import { Routes, Route } from 'react-router-dom';
 
 
@@ -30,6 +31,7 @@ function App(){
         <Route element={<RequireAuth allowedRoles={["AnyUser"]}/>}>
           <Route path="/" element={<Home />} />
           <Route path="user" element={<CurrentUser />} />
+          <Route path="passwordreset" element={<PasswordReset />} />
         </Route>
 
         <Route element={<RequireAuth allowedRoles={["Employer"]}/>}>

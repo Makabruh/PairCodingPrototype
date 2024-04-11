@@ -41,10 +41,33 @@ const Login = () => {
         console.log("Access Token:", auth.accessToken);
       }, [auth]);
 
+    // This effect runs on the first render of the page, fetching a csrf token from the backend
+    useEffect(() => {
+        const fetchToken = async () => {
+            try {
+                const response = await axios.get(LOGIN_URL, {
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    withCredentials: true
+                });
+                const loginToken = response?.data?.csrf_token;
+                console.log("fetched: " + loginToken);
+            } catch (error) {
+                if(!error?.response){
+                    console.log('No Server Response')
+                }
+                else {
+                    console.log("Error: No token received")
+                }
+            }
+        }
+        fetchToken();
+    }, [])
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            //Failing at this block
             const response = await axios.post(LOGIN_URL, 
                 JSON.stringify({ username: user, password: pwd}),
                 {
