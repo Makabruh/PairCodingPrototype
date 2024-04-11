@@ -7,6 +7,8 @@ import getCookie from '../functions/getCookie';
 
 const LOGOUT_URL = '/logout';
 
+//TEST
+
 const Home = () => {   
     const { setAuth } = useContext(AuthContext);
     const { auth } = useAuth();
