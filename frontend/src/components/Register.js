@@ -196,7 +196,7 @@ const Register = () => {
 
                 {/* This is the email field */}
                 <label htmlFor="email">Email: 
-                {/* These spans provide the green check mark if the username is valid and the red cross if not*/}
+                {/* These spans provide the green check mark if the email is valid and the red cross if not*/}
                     <span className={validEmail ? "valid" : "hide"}>
                         <FontAwesomeIcon icon={faCheck} />
                     </span>

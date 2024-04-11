@@ -1,5 +1,6 @@
 import './App.css';
 import Login from './components/Login';
+import PasswordReset from './components/PasswordReset';
 import Register from './components/Register';
 import Home from './components/Home';
 import LinkPage from './components/LinkPage';
@@ -21,6 +22,7 @@ function App(){
       <Route path="/" element={<Layout />}>
         {/* public routes  */}
         <Route path="login" element={<Login />} />
+        <Route path="passwordreset" element={<PasswordReset />} />
         <Route path="query" element={<Query />} />
         <Route path="register" element={<Register />} />
         <Route path="linkpage" element={<LinkPage />} />
