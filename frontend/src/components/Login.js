@@ -25,7 +25,6 @@ const Login = () => {
     const [user, setUser] = useState('');
     const [pwd, setPwd] = useState('');
     const [errMsg, setErrMsg] = useState('');
-    //TODO For testing purposes - Remove
 
     //Set the focus on the username input when the component loads
     useEffect(() => {
@@ -58,12 +57,12 @@ const Login = () => {
             //Get the CSRF token from the response data
             //! This access token is not used as a csrf token, could change this to represent a level of user access
             const accessToken = response?.data?.csrf_token;
+            const accessLevel = response?.data?.userlevel;
             //Saved in the global context
             // TODO change the user level to an access token representing a user level, for different user types
-            setAuth({user, accessToken: ["AnyUser", "Employer"]});
+            setAuth({user, accessLevel: ["AnyUser", accessLevel]});
             setUser('');
             setPwd('');
-            // TODO check this functions correctly instead of set success to true.
             navigate(from, { replace: true});
         }
         catch (err) {

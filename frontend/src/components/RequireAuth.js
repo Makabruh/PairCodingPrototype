@@ -18,7 +18,7 @@ const RequireAuth = ({allowedRoles}) => {
 
     useEffect(() => {
         console.log("User:", auth.user);
-        console.log("Access Token:", auth.accessToken);
+        console.log("Access Level:", auth.accessLevel);
       }, [auth]);
 
     const GetUser = async () => {
@@ -31,7 +31,6 @@ const RequireAuth = ({allowedRoles}) => {
                 {
                     headers: { 
                         'Content-Type': 'application/json', 
-                        // TODO test if csrf token request not being validated
                         'X-CSRFToken' : csrftoken,
                     },    
                 }
@@ -39,7 +38,7 @@ const RequireAuth = ({allowedRoles}) => {
             console.log(response.status);
             console.log(response.data.user);
             console.log(response.data.userlevel);
-            setAuth({user: response.data.user, accessToken: response.data.userlevel});
+            setAuth({user: response.data.user, accessLevel: response.data.userlevel});
             navigate(from, { replace: true});
 
         }
@@ -65,7 +64,7 @@ const RequireAuth = ({allowedRoles}) => {
 
     return (
         // Check the roles, then find the role passed and check the allowed roles and see if it includes the value passed
-        auth?.accessToken?.find(accessToken => allowedRoles?.includes(accessToken))
+        auth?.accessLevel?.find(accessLevel => allowedRoles?.includes(accessLevel))
             // if it does send them to the outlet page requested
             ? <Outlet />
             : auth?.user

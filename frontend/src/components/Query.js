@@ -3,14 +3,13 @@ import getCookie from '../functions/getCookie';
 import useAuth from '../hooks/useAuth';
 import {useRef, useState, useEffect} from 'react';
 
-const USER_URL = '/user';
+const QUERY_URL = '/query';
 
 
-
-const CurrentUser = () => {
+const Query = () => {
 
     const {auth, setAuth} = useAuth();
-    const [sessionUser, setSessionUser] = useState('');
+    const [currentUser, setCurrentUser] = useState('');
     const [errMsg, setErrMsg] = useState('');
     const errRef = useRef();
 
@@ -30,8 +29,8 @@ const CurrentUser = () => {
 
         e.preventDefault();
         try {
-            const response = await axios.post(USER_URL, 
-                JSON.stringify({ username: auth.user}),
+            const response = await axios.post(QUERY_URL, 
+                JSON.stringify({username: auth.user}),
                 {
                     headers: { 
                         'Content-Type': 'application/json', 
@@ -39,9 +38,9 @@ const CurrentUser = () => {
                     },    
                 }
             );
-            console.log(response.status);
-            console.log(response.data.user);
-            setSessionUser(response.data.user);
+            console.log(response.data.username);
+            setCurrentUser(response.data);
+            console.log(currentUser);
 
         }
         catch (err) {
@@ -63,9 +62,9 @@ const CurrentUser = () => {
         <section>
             <p ref={errRef} className={errMsg ? "errmsg" : "offscreen"} aria-live="assertive">{errMsg}</p>
             <h2>Current User:</h2>
-            <p>Auth User: {auth.user}</p>
-            <p>Auth Access Token: {auth.accessLevel}</p>
-            <p>Session Username: {sessionUser}</p>
+            <p>User: {currentUser.username}</p>
+            <p>User Level: {currentUser.userLevel}</p>
+            <p>Email: {currentUser.email}</p>
             <div className="flexGrow">
                 <button onClick={GetUser}>Get</button>
             </div>
@@ -74,4 +73,4 @@ const CurrentUser = () => {
     )
 }
 
-export default CurrentUser
+export default Query

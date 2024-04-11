@@ -10,5 +10,5 @@ urlpatterns = [
     path('user', UserView.as_view(), name="user"),
     path('restore', RestoreView.as_view(), name="restore"),
     # TODO Testing remove afterwards
-    path('hello/', HelloView.as_view(), name='hello'),
+    path('query', QueryView.as_view(), name="query"),
 ]

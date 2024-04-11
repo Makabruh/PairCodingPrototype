@@ -53,8 +53,15 @@ class UserLoginAPIView(APIView):
     def post(self, request):
         #Get the username from the data
         username = request.data.get('username')
-        #Check the database for the specific user object with unique username
-        user = UserInfo.objects.filter(username=username)
+        #Check the database for the specific user object with unique username & obtain the userLevel
+        query = [{
+            'username': output.username,
+            'userLevel': output.userLevel
+            }
+            for output in UserInfo.objects.filter(username=username)]
+        
+        access_level = query[0]["userLevel"]
+        user = query[0]["username"]
         #If a user object is found
         if user:
             #Instantiate the serializer
@@ -67,10 +74,10 @@ class UserLoginAPIView(APIView):
                 if authenticatedUser:
                     #Create a CSRF token for the user
                     login(request, authenticatedUser)
-                    create_session(request, username, ["AnyUser", "Employer"])
+                    create_session(request, username, ["AnyUser", access_level])
                     #! This token is not used, the login function aready creates a csrf token in cookie form.
                     csrf_token = get_token(request)
-                    return Response({"message": "Session Set", "csrf_token": csrf_token}, status=status.HTTP_200_OK)
+                    return Response({"userlevel": access_level, "csrf_token": csrf_token}, status=status.HTTP_200_OK)
                 else:
                     return Response({"message": "Password does not match"}, status=status.HTTP_401_UNAUTHORIZED)
             else:
@@ -110,11 +117,19 @@ class RestoreView(APIView):
 
 # TODO Testing remove afterwards
     
-class HelloView(APIView):
+class QueryView(APIView):
     permission_classes = (permissions.AllowAny,)
-    
-    # (IsAuthenticated,)   
 
-    def get(self, request):
-        content = {'message': 'Hello, World!'}
-        return Response(content)
+    def post(self, request):
+        user = request.data.get('username')
+        output = [{
+            'username': output.username,
+            'userLevel': output.userLevel,
+            'email': output.email
+            }
+            for output in UserInfo.objects.filter(username=user)]
+        
+        return Response(output[0])
+
+    
+
