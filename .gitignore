@@ -1,2 +1,8 @@
 backend/backend/settings.py
 virt/pyvenv.cfg
+
+/backend/secure_login/__pycache__
+/backend/secure_login/migrations
+
+/backend/backend/__pycache__
+
