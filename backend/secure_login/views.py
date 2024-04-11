@@ -53,17 +53,29 @@ class UserLoginAPIView(APIView):
     def post(self, request):
         #Get the username from the data
         username = request.data.get('username')
-        #Check the database for the specific user object with unique username & obtain the userLevel
+        #Check the database for the specific user object with unique username & obtain the userLevel, attempts left at password and id
         query = [{
+            'id' : output.id,
             'username': output.username,
+            'passwordAttemptsLeft': output.passwordAttemptsLeft,
             'userLevel': output.userLevel
             }
             for output in UserInfo.objects.filter(username=username)]
         
+        # set these ouputs into individual variables for use.
+        database_id = query[0]["id"]  
         access_level = query[0]["userLevel"]
         user = query[0]["username"]
+        attempts_left = query[0]["passwordAttemptsLeft"]
+
+        print(database_id-1)
+        databaseUser = UserInfo.objects.all()[database_id-1]
+        print(databaseUser.username)
+        print(databaseUser.passwordAttemptsLeft)
+
+
         #If a user object is found
-        if user:
+        if user and attempts_left > 0:
             #Instantiate the serializer
             serializer = LoginSerializer(data=request.data)
             #Check the data format with the serializer
@@ -75,13 +87,22 @@ class UserLoginAPIView(APIView):
                     #Create a CSRF token for the user
                     login(request, authenticatedUser)
                     create_session(request, username, ["AnyUser", access_level])
+                    databaseUser.passwordAttemptsLeft = 3
+                    databaseUser.save() 
                     #! This token is not used, the login function aready creates a csrf token in cookie form.
                     csrf_token = get_token(request)
                     return Response({"userlevel": access_level, "csrf_token": csrf_token}, status=status.HTTP_200_OK)
                 else:
+                    attempts_left -= 1
+                    databaseUser.passwordAttemptsLeft = attempts_left
+                    databaseUser.save() 
+                    print(databaseUser.username)
+                    print(databaseUser.passwordAttemptsLeft)
                     return Response({"message": "Password does not match"}, status=status.HTTP_401_UNAUTHORIZED)
             else:
                 return Response({"message": "Incorrect data format"}, status=status.HTTP_400_BAD_REQUEST)
+        elif attempts_left == 0:
+            return Response({"message": "No password attempts left"}, status=status.HTTP_401_UNAUTHORIZED)
         else:
             return Response({"message": "Username not in database"}, status=status.HTTP_400_BAD_REQUEST)
 

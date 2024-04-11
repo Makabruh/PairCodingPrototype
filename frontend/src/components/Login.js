@@ -132,6 +132,13 @@ const Login = () => {
                     <a href='/register'>Sign Up</a>
                 </span>
             </p>
+            <p>
+                Forgotten your password? <br />
+                <span className="line">
+                    {/* LINK GOES HERE TODO */}
+                    <a href='/passwordreset'>Reset Password</a>
+                </span>
+            </p>
         </form>
     </section>
         )}
