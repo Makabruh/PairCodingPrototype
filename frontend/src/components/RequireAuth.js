@@ -25,7 +25,6 @@ const RequireAuth = ({allowedRoles}) => {
 
         // e.preventDefault();
         try {
-            console.log(csrftoken);
             const response = await axios.post(RESTORE_SESSION_URL, 
                 JSON.stringify({}),
                 {
