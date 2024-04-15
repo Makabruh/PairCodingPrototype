@@ -60,7 +60,7 @@ const PasswordReset = () => {
         try {
             //Try to post to the backend
             const response = await axios.post(RESET_PASS, JSON.stringify(
-                { currentPassword: currentPwd, newPassword: newPwd }),
+                { password: currentPwd, newPassword: newPwd }),
                 {
                     headers: { 
                         'Content-Type': 'application/json', 

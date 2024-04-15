@@ -140,11 +140,17 @@ const Login = () => {
                 value={pwd}
                 required
             />
-            <br />
+            
 
             <button>
                 Sign In
             </button>
+
+            <p>
+                <span className="hyperlink">
+                <a href='/forgotpassword'>Forgotten Password</a>
+                </span>
+            </p>
 
             <br />
 

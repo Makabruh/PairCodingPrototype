@@ -124,6 +124,12 @@ button {
     display: inline-block;
 }
 
+.hyperlink {
+    display: inline-block;
+    font-style: italic;
+    font-size: 16px;
+}
+
 .userLevelRadio {
   margin-top: 1rem;
   display: flex;

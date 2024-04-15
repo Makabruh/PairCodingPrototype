@@ -36,3 +36,14 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserInfo
         fields = ['username']
+
+class PasswordSerializer(serializers.ModelSerializer):
+    # This is a field not included in UserInfo
+    # write_only=True means that it will only be used for deserialization but not for retrieving data
+    newPassword = serializers.CharField(write_only=True)
+
+    class Meta:
+        model = UserInfo
+        fields = ['password', 'newPassword']
+
+    

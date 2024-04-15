@@ -133,28 +133,35 @@ class PasswordResetView(APIView):
         #Get the current user object
         user = request.user
         #Fetch the data from the payload
-        #TODO - Make a serializer to do this
-        currentPassword = request.data.get('currentPassword')
-        newPassword = request.data.get('newPassword')
-        passwordInDatabase = user.password
+        try:
+            # Instantiate the serializer
+            serializer = PasswordSerializer(data=request.data)
+            # Check the data format with the serializer
+            if serializer.is_valid(raise_exception=True):
+                currentPassword = request.data.get('password')
+                newPassword = request.data.get('newPassword')
+                passwordInDatabase = user.password
+                # Check the current details using Django's check_password function (this is needed due to make_password generating a new hash each time)
+                if not check_password(currentPassword, passwordInDatabase):
+                    return Response({"message": "Password Incorrect"}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Check the current details using Django's check_password function (this is needed due to make_password generating a new hash each time)
-        if not check_password(currentPassword, passwordInDatabase):
-            return Response({"message": "Password Incorrect"}, status=status.HTTP_400_BAD_REQUEST)
+                # Set the new password
+                user.set_password(newPassword)
+                user.save()
+                
+                # Because the csrf token is consumed on this use, a new one will need to be issued
+                #csrf_token = get_token(request)
 
-        # Set the new password
-        user.set_password(newPassword)
-        user.save()
-        
-
-        # Because the csrf token is consumed on this use, a new one will need to be issued
-        #csrf_token = get_token(request)
-
-        #response = Response({"message": "Password changed successfully"}, status=status.HTTP_200_OK)
-        #response['X-CSRFToken'] = csrf_token
-        #! ISSUE TODO - The session is closing on returning this response
-        return Response({"message": "Password changed successfully"}, status=status.HTTP_200_OK)
-
+                #response = Response({"message": "Password changed successfully"}, status=status.HTTP_200_OK)
+                #response['X-CSRFToken'] = csrf_token
+                #! ISSUE TODO - The session is closing on returning this response
+                return Response({"message": "Password changed successfully"}, status=status.HTTP_200_OK)
+            else:
+                return Response({"message": "Incorrect data format"}, status=status.HTTP_400_BAD_REQUEST)
+        except serializers.ValidationError as e:
+            # This can be used to check the errors in the Django server
+            print(e.detail)
+            return Response({"message": "Validation error", "errors": e.detail}, status=status.HTTP_400_BAD_REQUEST)
 
     
 
