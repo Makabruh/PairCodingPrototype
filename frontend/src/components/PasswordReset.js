@@ -2,13 +2,17 @@ import { useNavigate, Link } from "react-router-dom";
 import {useRef, useState, useEffect} from 'react';
 import axios from '../api/axios';
 //Import visuals
-import { faCheck, faTimes, faInfoCircle } from "@fortawesome/free-solid-svg-icons"
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
+import { faCheck, faTimes, faInfoCircle } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+
+import getCookie from '../functions/getCookie';
 
 const RESET_PASS = '/passwordreset';
 const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%£*]).{8,24}$/;
 
 const PasswordReset = () => {   
+    //Get the CSRF token from the cookies
+    const csrftoken = getCookie('csrftoken');
     //States for the current password
     const [currentPwd, setCurrentPwd] = useState('');
     
@@ -58,7 +62,10 @@ const PasswordReset = () => {
             const response = await axios.post(RESET_PASS, JSON.stringify(
                 { currentPassword: currentPwd, newPassword: newPwd }),
                 {
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 
+                        'Content-Type': 'application/json', 
+                        'X-CSRFToken' : csrftoken,
+                    },      
                     withCredentials: true
                 }
             );

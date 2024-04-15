@@ -5,7 +5,7 @@ from . serializer import *
 from django.contrib.auth import login, logout
 from rest_framework.authentication import SessionAuthentication
 from rest_framework import permissions, status
-from django.contrib.auth.hashers import make_password
+from django.contrib.auth.hashers import make_password, check_password
 from django.middleware.csrf import get_token
 from rest_framework.permissions import IsAuthenticated
 
@@ -117,6 +117,8 @@ class RestoreView(APIView):
     permission_classes = (permissions.IsAuthenticated,)
     authentication_classes = (SessionAuthentication,)
     
+
+
     def post(self, request):
         serializer = UserSerializer(request.user)
         session_user = request.session.get('username')
@@ -124,29 +126,34 @@ class RestoreView(APIView):
         return Response({'user': session_user, 'userlevel': session_userlevel}, status=status.HTTP_200_OK)
     
 class PasswordResetView(APIView):
-    # Is authenticated means I need to provide csrf token
+    # We do not want to include 'authentication_classes = (SessionAuthentication,)' here as that will invalidate the session after the transaction
     permission_classes = (IsAuthenticated,)
-    authentication_classes = (SessionAuthentication,)
 
     def post(self, request):
         #Get the current user object
         user = request.user
         #Fetch the data from the payload
         #TODO - Make a serializer to do this
-        username = user.username
         currentPassword = request.data.get('currentPassword')
         newPassword = request.data.get('newPassword')
+        passwordInDatabase = user.password
 
-        # Check the current details
-        authenticatedUser = authenticate(username=username, password=currentPassword)
-        if not authenticatedUser:
+        # Check the current details using Django's check_password function (this is needed due to make_password generating a new hash each time)
+        if not check_password(currentPassword, passwordInDatabase):
             return Response({"message": "Password Incorrect"}, status=status.HTTP_400_BAD_REQUEST)
-        
+
         # Set the new password
         user.set_password(newPassword)
         user.save()
+        
 
-        return Response({"message": "Password Changed"}, status=status.HTTP_200_OK)
+        # Because the csrf token is consumed on this use, a new one will need to be issued
+        #csrf_token = get_token(request)
+
+        #response = Response({"message": "Password changed successfully"}, status=status.HTTP_200_OK)
+        #response['X-CSRFToken'] = csrf_token
+        #! ISSUE TODO - The session is closing on returning this response
+        return Response({"message": "Password changed successfully"}, status=status.HTTP_200_OK)
 
 
     
