@@ -59,39 +59,28 @@ class UserLoginAPIView(APIView):
         return Response({"csrf_token": csrf_token}, status=status.HTTP_200_OK)
 
     def post(self, request):
-        #Get the username from the data
+        # Get the username from the data
         username = request.data.get('username')
-        #Check the database for the specific user object with unique username & obtain the userLevel
-        query = [{
-            'username': output.username,
-            'userLevel': output.userLevel
-            }
-            for output in UserInfo.objects.filter(username=username)]
-        
-        access_level = query[0]["userLevel"]
-        user = query[0]["username"]
         # Get the actual user object in order to modify values from the model
         userTest = UserInfo.objects.get(username=username)
-        #If a user object is found
-        if user and userTest.accountLocked == False:
-            #Instantiate the serializer
+        # If a user object is found and the account is not locked
+        if userTest.username and userTest.accountLocked == False:
+            # Instantiate the serializer
             serializer = LoginSerializer(data=request.data)
-            #Check the data format with the serializer
+            # Check the data format with the serializer
             if serializer.is_valid(raise_exception=True):
-                #Call the check_user function within the serializer
+                # Call the check_user function within the serializer
                 authenticatedUser = serializer.check_user(request.data)
-                # If the account is locked, prevent the login attempt
-                # Check that there is a user object returned from this function
+                # Check that there is a user object returned from this function - this will be the authenticated user
                 if authenticatedUser:
-                    #Create a CSRF token for the user
+                    # Use the Django login function that creates a sessionid and token for the frontend and backend
                     login(request, authenticatedUser)
-                    create_session(request, username, ["AnyUser", access_level])
-                    #! This token is not used, the login function aready creates a csrf token in cookie form.
-                    csrf_token = get_token(request)
-                    return Response({"userlevel": access_level, "csrf_token": csrf_token}, status=status.HTTP_200_OK)
+                    # Create a session storing the username and the userLevel within the session
+                    create_session(request, username, ["AnyUser", userTest.userLevel])
+                    # Return the userLevel to the frontend
+                    return Response({"userlevel": userTest.userLevel}, status=status.HTTP_200_OK)
                 else:
                     # Modify the passwordAttemptsLeft field in the model UserInfo
-                    print("Reducing password attempts")
                     userTest.passwordAttemptsLeft -= 1
                     userTest.save()
                     # If the value is 0, lock the account by changing the boolean to True
