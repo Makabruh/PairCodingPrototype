@@ -8,7 +8,7 @@ from rest_framework import permissions, status
 from django.contrib.auth.hashers import make_password, check_password
 from django.middleware.csrf import get_token
 from rest_framework.permissions import IsAuthenticated
-from rest_framework_simplejwt.tokens import RefreshToken
+#from rest_framework_simplejwt.tokens import RefreshToken
 
 def create_session(request, username, userlevel):
     request.session['username'] = username
