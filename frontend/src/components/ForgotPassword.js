@@ -3,9 +3,11 @@ import {useRef, useState, useEffect} from 'react';
 import axios from '../api/axios';
 import getCookie from '../functions/getCookie';
 
-const FORGOT_PASS = '/forgotpassword';
+const FORGOT_PASS = '/mfaemail';
 
 const PasswordReset = () => { 
+    //Get the CSRF token from the cookies
+    const csrftoken = getCookie('csrftoken');
 
     //States for the new password
     const [email, setEmail] = useState('');
@@ -18,7 +20,29 @@ const PasswordReset = () => {
     const [errMsg, setErrMsg] = useState('');
 
     const handleSubmit = async (e) => {
-        console.log("Click")
+        try {
+            //Try to post to the backend
+            const response = await axios.post(FORGOT_PASS, JSON.stringify(
+                { email, request_reason: "forgotpassword" }),
+                {
+                    headers: { 
+                        'Content-Type': 'application/json', 
+                        'X-CSRFToken' : csrftoken,
+                    },      
+                    withCredentials: true
+                }
+            );
+            setEmail('');
+            console.log("Sending email!")
+        }
+        catch (error){
+            if (!error?.response){
+                setErrMsg('No Server Response');
+            } else {
+                setErrMsg('Password Change Failed')
+            }
+            errRef.current.focus();
+        }
     }
 
 return (

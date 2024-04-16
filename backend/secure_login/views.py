@@ -8,6 +8,7 @@ from rest_framework import permissions, status
 from django.contrib.auth.hashers import make_password, check_password
 from django.middleware.csrf import get_token
 from rest_framework.permissions import IsAuthenticated
+from django.core.mail import send_mail
 #from rest_framework_simplejwt.tokens import RefreshToken
 
 def create_session(request, username, userlevel):
@@ -166,7 +167,27 @@ class PasswordResetView(APIView):
             print(e.detail)
             return Response({"message": "Validation error", "errors": e.detail}, status=status.HTTP_400_BAD_REQUEST)
 
-    
+class MFA_Email(APIView):
+    permission_classes = (permissions.AllowAny,)
+
+    def post(self, request):
+        serializer = MFA_EmailSerializer(data=request.data)
+        if serializer.is_valid(raise_exception=True):
+            sendEmail = request.data.get('email')
+            
+            #! TODO This will need to be set up with the SMTP host and port in settings.py
+            send_mail(
+                "CoolAMS - Forgotten Password Request",
+                "Code - 1990",
+                "coolams@example.com",
+                [sendEmail],
+                fail_silently=False,
+            )
+            return Response({"message": "Email will be sent"}, status=status.HTTP_200_OK)
+        else:
+            print("not valid")
+            return Response({"message": "Incorrect data format"}, status=status.HTTP_400_BAD_REQUEST)
+
 
 
 # TODO Testing remove afterwards

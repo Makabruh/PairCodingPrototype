@@ -46,4 +46,10 @@ class PasswordSerializer(serializers.ModelSerializer):
         model = UserInfo
         fields = ['password', 'newPassword']
 
+class MFA_EmailSerializer(serializers.ModelSerializer):
+    request_reason = serializers.CharField(write_only=True)
+
+    class Meta:
+        model = UserInfo
+        fields = ['email', 'request_reason']
     
