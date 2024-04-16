@@ -74,8 +74,8 @@ class UserLoginAPIView(APIView):
                 authenticatedUser = serializer.check_user(request.data)
                 # Check that there is a user object returned from this function - this will be the authenticated user
                 if authenticatedUser:
-                    refresh = RefreshToken.for_user(user)
-                    access_token = str(refresh.access_token)
+                    #refresh = RefreshToken.for_user(user)
+                    #access_token = str(refresh.access_token)
                     # Use the Django login function that creates a sessionid and token for the frontend and backend
                     login(request, authenticatedUser)
                     # Create a session storing the username and the userLevel within the session
