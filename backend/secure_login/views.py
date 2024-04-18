@@ -131,7 +131,7 @@ class RestoreView(APIView):
     
 class PasswordResetView(APIView):
     # We do not want to include 'authentication_classes = (SessionAuthentication,)' here as that will invalidate the session after the transaction
-    permission_classes = (IsAuthenticated,)
+    permission_classes = (permissions.AllowAny,)
 
     def post(self, request):
         #Get the current user object
@@ -173,6 +173,7 @@ class MFA_Email(APIView):
     def post(self, request):
         serializer = MFA_EmailSerializer(data=request.data)
         if serializer.is_valid(raise_exception=True):
+            #TODO - add in request_reason logic - this will be 'forgotpassword'
             sendEmail = request.data.get('email')
             
             #! TODO This will need to be set up with the SMTP host and port in settings.py
@@ -188,7 +189,43 @@ class MFA_Email(APIView):
             print("not valid")
             return Response({"message": "Incorrect data format"}, status=status.HTTP_400_BAD_REQUEST)
 
+class VerifyUser(APIView):
+    # We do not want to include 'authentication_classes = (SessionAuthentication,)' here as that will invalidate the session after the transaction
+    permission_classes = (permissions.AllowAny,)
 
+    def post(self, request):
+        #Get the current user object
+        user = request.user
+        #Fetch the data from the payload
+        if not user.username:
+            #If there is no user - we need to use the OTP method
+            #It will return an empty user object on request.user so we need to check if there is a username
+            print("no user - use OTP")
+            verificationCode = 2201
+            request.session['verification'] = verificationCode
+            return Response({"message": "Verified User", "verificationCode": verificationCode}, status=status.HTTP_200_OK)
+        else:
+            try:
+                # Instantiate the serializer
+                serializer = PasswordSerializer(data=request.data)
+                print("user found")
+                # Check the data format with the serializer
+                if serializer.is_valid(raise_exception=True):
+                    currentPassword = request.data.get('password')
+                    passwordInDatabase = user.password
+                    # Check the current details using Django's check_password function (this is needed due to make_password generating a new hash each time)
+                    if not check_password(currentPassword, passwordInDatabase):
+                        return Response({"message": "Password Incorrect"}, status=status.HTTP_400_BAD_REQUEST)
+                    # If logged in, there is no need to return the user
+                    # Store a code in the session
+                    verificationCode = 2201
+                    request.session['verification'] = verificationCode
+                    # Rather than putting the verification code in the data, does this need to be a httponly cookie?
+                    return Response({"message": "Verified User", "verificationCode": verificationCode}, status=status.HTTP_200_OK)
+            except serializers.ValidationError as e:
+                # This can be used to check the errors in the Django server
+                print(e.detail)
+                return Response({"message": "Validation error", "errors": e.detail}, status=status.HTTP_400_BAD_REQUEST)
 
 # TODO Testing remove afterwards
     

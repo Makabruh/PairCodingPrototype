@@ -65,7 +65,7 @@ const Home = () => {
             <br />
             <p>You are logged in!</p>
             <br />
-            <Link to="/passwordreset">Change your Password</Link>
+            <Link to="/verifyuser">Change your Password</Link>
             <br />
             <Link to="/employer">Go to the Employer page</Link>
             <br />

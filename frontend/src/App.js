@@ -13,6 +13,7 @@ import Unauthorized from './components/Unauthorized';
 import RequireAuth from './components/RequireAuth';
 import PasswordReset from './components/PasswordReset';
 import ForgotPassword from './components/ForgotPassword';
+import VerifyUser from './components/VerifyUser';
 import { Routes, Route } from 'react-router-dom';
 
 
@@ -28,12 +29,13 @@ function App(){
         <Route path="linkpage" element={<LinkPage />} />
         <Route path="unauthorized" element={<Unauthorized />} />
         <Route path="forgotpassword" element={<ForgotPassword />} />
+        <Route path="resetpassword" element={<PasswordReset />} />
+        <Route path="verifyuser" element={<VerifyUser />} />
 
         {/* we want to protect these routes */}
         <Route element={<RequireAuth allowedRoles={["AnyUser"]}/>}>
           <Route path="/" element={<Home />} />
           <Route path="user" element={<CurrentUser />} />
-          <Route path="passwordreset" element={<PasswordReset />} />
         </Route>
 
         <Route element={<RequireAuth allowedRoles={["Employer"]}/>}>
