@@ -41,6 +41,7 @@ class PasswordSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserInfo
         fields = ['username', 'password']
+        read_only_fields = ['username']
 
 class MFA_EmailSerializer(serializers.ModelSerializer):
     request_reason = serializers.CharField(write_only=True)
@@ -53,4 +54,5 @@ class OTPSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserInfo
         fields = ['username', 'OTP']
+        read_only_fields = ['username']
     

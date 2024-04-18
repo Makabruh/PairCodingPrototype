@@ -202,7 +202,6 @@ class VerifyUser(APIView):
         #If there is no user - we need to use the OTP method
         #It will return an empty user object on request.user so we need to check if there is a username
         if not user.username:
-            print("no user - use OTP")
             # We are going to use the OTPSerializer for the field OTP from the database - it will be a number
             try:
                 serializer = OTPSerializer(data=request.data)
@@ -210,7 +209,11 @@ class VerifyUser(APIView):
                     # The user has reached this point by clicking the link in the email which takes them to the VerifyUser component
                     # Therefore the link they clicked contains their username
                     # Check the OTP against the user's OTP in the database
-                    if not (serializer.OTP == serializer.OTP):
+                    otp_input = request.data.get('password')
+                    username = request.data.get('username')
+                    userObject = UserInfo.objects.get(username=username)
+                    otp_in_database = userObject.OTP
+                    if not (otp_input == otp_in_database):
                         return Response({"message": "OTP Incorrect"}, status=status.HTTP_400_BAD_REQUEST)
                     # Store a code in the session
                     verificationCode = 2201
@@ -230,11 +233,11 @@ class VerifyUser(APIView):
             try:
                 # Instantiate the serializer
                 serializer = PasswordSerializer(data=request.data)
-                print("user found")
                 # Check the data format with the serializer
                 if serializer.is_valid(raise_exception=True):
                     currentPassword = request.data.get('password')
                     passwordInDatabase = user.password
+                    username = request.data.get('username')
                     # Check the current details using Django's check_password function (this is needed due to make_password generating a new hash each time)
                     if not check_password(currentPassword, passwordInDatabase):
                         return Response({"message": "Password Incorrect"}, status=status.HTTP_400_BAD_REQUEST)
