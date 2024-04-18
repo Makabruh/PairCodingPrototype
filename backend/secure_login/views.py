@@ -9,6 +9,8 @@ from django.contrib.auth.hashers import make_password, check_password
 from django.middleware.csrf import get_token
 from rest_framework.permissions import IsAuthenticated
 from django.core.mail import send_mail
+from django.http import JsonResponse
+from datetime import datetime, timedelta
 #from rest_framework_simplejwt.tokens import RefreshToken
 
 def create_session(request, username, userlevel):
@@ -193,17 +195,37 @@ class VerifyUser(APIView):
     # We do not want to include 'authentication_classes = (SessionAuthentication,)' here as that will invalidate the session after the transaction
     permission_classes = (permissions.AllowAny,)
 
+    #TODO Could make this more maintainable by introducing a verify function that creates the code and constructs and sends the response
     def post(self, request):
         #Get the current user object
         user = request.user
-        #Fetch the data from the payload
+        #If there is no user - we need to use the OTP method
+        #It will return an empty user object on request.user so we need to check if there is a username
         if not user.username:
-            #If there is no user - we need to use the OTP method
-            #It will return an empty user object on request.user so we need to check if there is a username
             print("no user - use OTP")
-            verificationCode = 2201
-            request.session['verification'] = verificationCode
-            return Response({"message": "Verified User", "verificationCode": verificationCode}, status=status.HTTP_200_OK)
+            # We are going to use the OTPSerializer for the field OTP from the database - it will be a number
+            try:
+                serializer = OTPSerializer(data=request.data)
+                if serializer.is_valid(raise_exception=True):
+                    # The user has reached this point by clicking the link in the email which takes them to the VerifyUser component
+                    # Therefore the link they clicked contains their username
+                    # Check the OTP against the user's OTP in the database
+                    if not (serializer.OTP == serializer.OTP):
+                        return Response({"message": "OTP Incorrect"}, status=status.HTTP_400_BAD_REQUEST)
+                    # Store a code in the session
+                    verificationCode = 2201
+                    request.session['verification'] = verificationCode
+                    response = JsonResponse({"message": "Verified User"}, status=status.HTTP_200_OK)
+                    # Set the HTTPOnly cookie with an expiration time of 15 mins
+                    expiration_time = datetime.now() + timedelta(minutes=15)
+                    response.set_cookie('accountVerification', verificationCode, httponly=True, expires=expiration_time)
+                    return response
+            except serializers.ValidationError as e:
+                # This can be used to check the errors in the Django server
+                print(e.detail)
+                return Response({"message": "Validation error", "errors": e.detail}, status=status.HTTP_400_BAD_REQUEST)
+            
+            
         else:
             try:
                 # Instantiate the serializer
@@ -220,8 +242,11 @@ class VerifyUser(APIView):
                     # Store a code in the session
                     verificationCode = 2201
                     request.session['verification'] = verificationCode
-                    # Rather than putting the verification code in the data, does this need to be a httponly cookie?
-                    return Response({"message": "Verified User", "verificationCode": verificationCode}, status=status.HTTP_200_OK)
+                    response = JsonResponse({"message": "Verified User"}, status=status.HTTP_200_OK)
+                    # Set the HTTPOnly cookie with an expiration time of 15 mins
+                    expiration_time = datetime.now() + timedelta(minutes=15)
+                    response.set_cookie('accountVerification', verificationCode, httponly=True, expires=expiration_time)
+                    return response
             except serializers.ValidationError as e:
                 # This can be used to check the errors in the Django server
                 print(e.detail)

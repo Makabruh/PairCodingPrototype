@@ -30,7 +30,8 @@ function App(){
         <Route path="unauthorized" element={<Unauthorized />} />
         <Route path="forgotpassword" element={<ForgotPassword />} />
         <Route path="resetpassword" element={<PasswordReset />} />
-        <Route path="verifyuser" element={<VerifyUser />} />
+        {/* For security purposes - this may need to be a hashed username in the future */}
+        <Route path="verifyuser/:username" element={<VerifyUser />} />
 
         {/* we want to protect these routes */}
         <Route element={<RequireAuth allowedRoles={["AnyUser"]}/>}>

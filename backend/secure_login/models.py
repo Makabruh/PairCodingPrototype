@@ -1,7 +1,7 @@
 from django.db import models
 from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
-from django.core.validators import MaxValueValidator
+from django.core.validators import MaxValueValidator, RegexValidator
 
 class UserInfoManager(BaseUserManager):
     def create_user(self, username, password=None):
@@ -32,6 +32,10 @@ class UserInfo(AbstractBaseUser, PermissionsMixin):
     email = models.CharField(max_length=100, unique=True)
     passwordAttemptsLeft = models.PositiveIntegerField(default = 3, validators=[MaxValueValidator(3)])
     accountLocked = models.BooleanField(default = False)
+    #Validator for the OTP ensuring it is 8 digits long
+    OTP_validator = RegexValidator(regex=r'^\d{8}$')
+    #OTP must be 8 characters, defaults to empty
+    OTP = models.CharField(max_length=8, default='', validators=[OTP_validator], blank=True)
     # This needs to be introduced to manage previous devices but must be able to be null on sign up
     #!authenticatedDevices = models.JSONField()
     USERNAME_FIELD = 'username'

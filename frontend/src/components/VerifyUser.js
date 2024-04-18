@@ -1,4 +1,4 @@
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useParams } from "react-router-dom";
 import {useRef, useState, useEffect} from 'react';
 import axios from '../api/axios';
 import useAuth from "../hooks/useAuth";
@@ -21,19 +21,22 @@ const VerifyUser = () => {
     const csrftoken = getCookie('csrftoken');
     //Get the auth state to check for user
     const { auth } = useAuth();
+
+    const { username } = useParams();
     
     //States for the current password
     const [currentPwd, setCurrentPwd] = useState('');
 
     //States for OTP
     const [otp, setOtp] = useState('');
-    const [otpFocus, setOtpFocus] = useState(false);
 
     // Refs
     const errRef = useRef();
 
     // States
     const [errMsg, setErrMsg] = useState('');
+
+    const navigate = useNavigate();
 
     //On button click
     const handleSubmit = async (e) => {
@@ -43,7 +46,7 @@ const VerifyUser = () => {
         try {
             //Try to post to the backend
             const response = await axios.post(VERIFY_USER, JSON.stringify(
-                { password: currentPwd }),
+                { password: currentPwd, username }),
                 {
                     headers: { 
                         'Content-Type': 'application/json', 
@@ -53,7 +56,9 @@ const VerifyUser = () => {
                 }
             );
             console.log("Password accepted!")
-            console.log(response.data.verificationCode)
+            const verification = getCookie('accountVerification');
+            console.log(verification)
+            navigate('/resetpassword');
         }
         catch (error){
             if (!error?.response){
@@ -72,7 +77,7 @@ const VerifyUser = () => {
         try {
             //Try to post to the backend
             const response = await axios.post(VERIFY_USER, JSON.stringify(
-                { password: otp }),
+                { password: otp, username }),
                 {
                     headers: { 
                         'Content-Type': 'application/json', 
@@ -82,7 +87,9 @@ const VerifyUser = () => {
                 }
             );
             console.log("OTP accepted")
-            console.log(response.data.verificationCode)
+            const verification = getCookie('accountVerification');
+            console.log(verification)
+            navigate('/resetpassword');
         }
         catch (error){
             if (!error?.response){

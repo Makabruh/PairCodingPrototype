@@ -38,14 +38,9 @@ class UserSerializer(serializers.ModelSerializer):
         fields = ['username']
 
 class PasswordSerializer(serializers.ModelSerializer):
-    # This is a field not included in UserInfo
-    # write_only=True means that it will only be used for deserialization but not for retrieving data
-    # newPassword = serializers.CharField(write_only=True)
-    # Took out 'newPassword' from fields
-
     class Meta:
         model = UserInfo
-        fields = ['password']
+        fields = ['username', 'password']
 
 class MFA_EmailSerializer(serializers.ModelSerializer):
     request_reason = serializers.CharField(write_only=True)
@@ -53,4 +48,9 @@ class MFA_EmailSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserInfo
         fields = ['email', 'request_reason']
+
+class OTPSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserInfo
+        fields = ['username', 'OTP']
     
