@@ -11,6 +11,7 @@ from rest_framework.permissions import IsAuthenticated
 from django.core.mail import send_mail
 from django.http import JsonResponse
 from datetime import datetime, timedelta
+import random
 #from rest_framework_simplejwt.tokens import RefreshToken
 
 def create_session(request, username, userlevel):
@@ -177,15 +178,31 @@ class MFA_Email(APIView):
         if serializer.is_valid(raise_exception=True):
             #TODO - add in request_reason logic - this will be 'forgotpassword'
             sendEmail = request.data.get('email')
+            request_reason = request.data.get('request_reason')
+
+            if request_reason == "forgotpassword":
+                # Uses the random library to pick 6 digits from the choices
+                generatedOTP = ''.join(random.choices('0123456789', k=6))
+                #Find the user with the associated email and save the OTP in the OTP field
+                try:
+                    user = UserInfo.objects.get(email=sendEmail)
+                    #Save the OTP to the user
+                    
+                    #! TODO This will need to be set up with the SMTP host and port in settings.py
+                    send_mail(
+                        "CoolAMS - Forgotten Password Request",
+                        "Code - ", generatedOTP,
+                        "coolams@example.com",
+                        [sendEmail],
+                        fail_silently=False,
+                    )
+                    #! This will need to be removed once it has been set up
+                    print(generatedOTP)
+                #If there is no user with this email
+                except UserInfo.DoesNotExist:
+                    return Response({"message": "No user with this email"}, status=status.HTTP_400_BAD_REQUEST)
             
-            #! TODO This will need to be set up with the SMTP host and port in settings.py
-            send_mail(
-                "CoolAMS - Forgotten Password Request",
-                "Code - 1990",
-                "coolams@example.com",
-                [sendEmail],
-                fail_silently=False,
-            )
+                
             return Response({"message": "Email will be sent"}, status=status.HTTP_200_OK)
         else:
             print("not valid")
@@ -215,8 +232,9 @@ class VerifyUser(APIView):
                     otp_in_database = userObject.OTP
                     if not (otp_input == otp_in_database):
                         return Response({"message": "OTP Incorrect"}, status=status.HTTP_400_BAD_REQUEST)
-                    # Store a code in the session
+                    # Store a code in the session (for the OTP route, a session will be created)
                     verificationCode = 2201
+                    create_session(request, username, ["AnyUser", 'VerifiedButNotLogged'])
                     request.session['verification'] = verificationCode
                     response = JsonResponse({"message": "Verified User"}, status=status.HTTP_200_OK)
                     # Set the HTTPOnly cookie with an expiration time of 15 mins

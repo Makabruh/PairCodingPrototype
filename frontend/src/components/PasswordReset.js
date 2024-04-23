@@ -17,6 +17,8 @@ const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%£*]).{8,24
 // For the most reusable system, both sets of users will be asked to input their credential - old password / OTP
 // Once this has been posted and accepted, they will be taken to a new page with just the new password to be inputted
 
+//TODO - Take the verification cookie, post it to the backend, ensure it matches
+
 const PasswordReset = () => {   
     //Get the CSRF token from the cookies
     const csrftoken = getCookie('csrftoken');
