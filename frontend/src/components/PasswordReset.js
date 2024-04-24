@@ -67,13 +67,15 @@ const PasswordReset = () => {
         }
 
         try {
+            const verification = getCookie('accountVerification');
             //Try to post to the backend
             const response = await axios.post(RESET_PASS, JSON.stringify(
-                { password: newPwd }),
+                { password: newPwd, username: "guest" }),
                 {
                     headers: { 
                         'Content-Type': 'application/json', 
                         'X-CSRFToken' : csrftoken,
+                        'Verification-Token' : verification,
                     },      
                     withCredentials: true
                 }
@@ -81,6 +83,7 @@ const PasswordReset = () => {
             setNewPwd('');
             setNewMatchPwd('');
             console.log("Password change success!")
+            //TODO Blank auth and redirect
         }
         catch (error){
             if (!error?.response){
