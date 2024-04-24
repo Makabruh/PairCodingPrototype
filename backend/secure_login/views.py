@@ -137,38 +137,45 @@ class PasswordResetView(APIView):
     permission_classes = (permissions.AllowAny,)
 
     def post(self, request):
+        verificationCodeBackend = request.session.get('verification')
+        verificationCodeFrontend = request.COOKIES.get('accountVerification')
         #Get the current user object
-        user = request.user
-        #Fetch the data from the payload
-        try:
-            # Instantiate the serializer
-            serializer = PasswordSerializer(data=request.data)
-            # Check the data format with the serializer
-            if serializer.is_valid(raise_exception=True):
-                currentPassword = request.data.get('password')
-                newPassword = request.data.get('newPassword')
-                passwordInDatabase = user.password
-                # Check the current details using Django's check_password function (this is needed due to make_password generating a new hash each time)
-                if not check_password(currentPassword, passwordInDatabase):
-                    return Response({"message": "Password Incorrect"}, status=status.HTTP_400_BAD_REQUEST)
+        username = request.session.get('username')
 
-                # Set the new password
-                user.set_password(newPassword)
-                user.save()
-                
-                # Because the csrf token is consumed on this use, a new one will need to be issued
-                #csrf_token = get_token(request)
+        # Check that the verification codes are the same
+        if (verificationCodeBackend == verificationCodeFrontend):
+            try:
+                # Instantiate the serializer
+                serializer = PasswordSerializer(data=request.data)
+                newPassword = request.data.get("password")
+                userObject = UserInfo.objects.get(username=username)
+                #! TODO - This will need to become bcrypt when we switch over
+                hashedNewPassword = make_password(newPassword)
+                hashedOldPassword = userObject.password
+                print(hashedNewPassword)
+                print(hashedOldPassword)
+                if (hashedNewPassword != hashedOldPassword):
+                    userObject.password = hashedNewPassword
+                    userObject.accountLocked = False
+                    userObject.passwordAttemptsLeft = 3
+                    userObject.save()
+                    request.session.flush()
+                    #TODO Close session here
+                    return Response({"message": "Password changed"}, status=status.HTTP_200_OK)
+                else:
+                    return Response({"message": "Password needs to be new"}, status=status.HTTP_406_NOT_ACCEPTABLE)
 
-                #response = Response({"message": "Password changed successfully"}, status=status.HTTP_200_OK)
-                #response['X-CSRFToken'] = csrf_token
-                #! ISSUE TODO - The session is closing on returning this response
-                return Response({"message": "Password changed successfully"}, status=status.HTTP_200_OK)
-            else:
-                return Response({"message": "Incorrect data format"}, status=status.HTTP_400_BAD_REQUEST)
-        except serializers.ValidationError as e:
-            # This can be used to check the errors in the Django server
-            print(e.detail)
-            return Response({"message": "Validation error", "errors": e.detail}, status=status.HTTP_400_BAD_REQUEST)
+            except serializers.ValidationError as e:
+                # This can be used to check the errors in the Django server
+                print(e.detail)
+                #TODO Close session here
+                request.session.flush()
+                return Response({"message": "Validation error", "errors": e.detail}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            #TODO Close session here
+            request.session.flush()
+            return Response({"message": "Verification Incorrect"}, status=status.HTTP_401_UNAUTHORIZED)
+
 
 class MFA_Email(APIView):
     permission_classes = (permissions.AllowAny,)
@@ -186,23 +193,24 @@ class MFA_Email(APIView):
                 #Find the user with the associated email and save the OTP in the OTP field
                 try:
                     user = UserInfo.objects.get(email=sendEmail)
+                    user.OTP = generatedOTP
+                    user.save()
                     #Save the OTP to the user
                     
                     #! TODO This will need to be set up with the SMTP host and port in settings.py
-                    send_mail(
-                        "CoolAMS - Forgotten Password Request",
-                        "Code - ", generatedOTP,
-                        "coolams@example.com",
-                        [sendEmail],
-                        fail_silently=False,
-                    )
+                    # send_mail(
+                    #     "CoolAMS - Forgotten Password Request",
+                    #     "Code - ", generatedOTP,
+                    #     "coolams@example.com",
+                    #     [sendEmail],
+                    #     fail_silently=False,
+                    # )
                     #! This will need to be removed once it has been set up
                     print(generatedOTP)
                 #If there is no user with this email
                 except UserInfo.DoesNotExist:
+                    print("user not found")
                     return Response({"message": "No user with this email"}, status=status.HTTP_400_BAD_REQUEST)
-            
-                
             return Response({"message": "Email will be sent"}, status=status.HTTP_200_OK)
         else:
             print("not valid")
@@ -233,8 +241,8 @@ class VerifyUser(APIView):
                     if not (otp_input == otp_in_database):
                         return Response({"message": "OTP Incorrect"}, status=status.HTTP_400_BAD_REQUEST)
                     # Store a code in the session (for the OTP route, a session will be created)
-                    verificationCode = 2201
-                    create_session(request, username, ["AnyUser", 'VerifiedButNotLogged'])
+                    verificationCode = "2201"
+                    create_session(request, username, ['VerifiedButNotLogged'])
                     request.session['verification'] = verificationCode
                     response = JsonResponse({"message": "Verified User"}, status=status.HTTP_200_OK)
                     # Set the HTTPOnly cookie with an expiration time of 15 mins
@@ -261,7 +269,7 @@ class VerifyUser(APIView):
                         return Response({"message": "Password Incorrect"}, status=status.HTTP_400_BAD_REQUEST)
                     # If logged in, there is no need to return the user
                     # Store a code in the session
-                    verificationCode = 2201
+                    verificationCode = "2201"
                     request.session['verification'] = verificationCode
                     response = JsonResponse({"message": "Verified User"}, status=status.HTTP_200_OK)
                     # Set the HTTPOnly cookie with an expiration time of 15 mins

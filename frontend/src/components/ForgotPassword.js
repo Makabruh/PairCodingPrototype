@@ -21,6 +21,7 @@ const PasswordReset = () => {
 
     const handleSubmit = async (e) => {
         try {
+            e.preventDefault();
             //Try to post to the backend
             const response = await axios.post(FORGOT_PASS, JSON.stringify(
                 { email, request_reason: "forgotpassword" }),
