@@ -186,23 +186,24 @@ class MFA_Email(APIView):
                 #Find the user with the associated email and save the OTP in the OTP field
                 try:
                     user = UserInfo.objects.get(email=sendEmail)
+                    user.OTP = generatedOTP
+                    user.save()
                     #Save the OTP to the user
                     
                     #! TODO This will need to be set up with the SMTP host and port in settings.py
-                    send_mail(
-                        "CoolAMS - Forgotten Password Request",
-                        "Code - ", generatedOTP,
-                        "coolams@example.com",
-                        [sendEmail],
-                        fail_silently=False,
-                    )
+                    # send_mail(
+                    #     "CoolAMS - Forgotten Password Request",
+                    #     "Code - ", generatedOTP,
+                    #     "coolams@example.com",
+                    #     [sendEmail],
+                    #     fail_silently=False,
+                    # )
                     #! This will need to be removed once it has been set up
                     print(generatedOTP)
                 #If there is no user with this email
                 except UserInfo.DoesNotExist:
+                    print("user not found")
                     return Response({"message": "No user with this email"}, status=status.HTTP_400_BAD_REQUEST)
-            
-                
             return Response({"message": "Email will be sent"}, status=status.HTTP_200_OK)
         else:
             print("not valid")
