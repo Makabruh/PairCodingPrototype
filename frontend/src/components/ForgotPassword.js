@@ -18,6 +18,7 @@ const PasswordReset = () => {
 
     // States
     const [errMsg, setErrMsg] = useState('');
+    const [emailSent, setEmailSent] = useState(false);
 
     const handleSubmit = async (e) => {
         try {
@@ -34,40 +35,53 @@ const PasswordReset = () => {
                 }
             );
             setEmail('');
-            console.log("Sending email!")
+            setEmailSent(true);
         }
         catch (error){
             if (!error?.response){
                 setErrMsg('No Server Response');
-            } else {
-                setErrMsg('Password Change Failed')
+            } else if (error.response?.status === 400) {
+                //TODO - Would we want this to setEmailSent true to avoid people attempting different emails
+                setErrMsg('Something Went Wrong')
             }
             errRef.current.focus();
         }
     }
 
 return (
-    <section>
-        {/* The error message displayed at the top if there is one (assertive means announced immediately when the focus is put on the error message) */}
-        <p ref={errRef} className={errMsg ? "errmsg" : "offscreen"} aria-live="assertive">{errMsg}</p>
-        <h1>Forgot Your Password?</h1>
-        
-        <form>
-            <label htmlFor='email'>Please enter your account's email address: </label>
-            <input
-                type="email"
-                id="email"
-                onChange={(e) => setEmail(e.target.value)}
-                value={email}
-                required
-            ></input>
-            <button onClick={handleSubmit}>Request Password Reset</button>
-        </form>
+    emailSent 
+        ?
+        <section>
+            <h2>An email has been sent to this email address</h2>
+            <br />
+            <p>Please follow the instructions to reset your password</p>
+            <br />
+            <Link to="/">Go Home</Link>
+            <br />
+        </section>
 
-        <br />
-        <Link to="/">Go Home</Link>
-        <br />
-    </section>
+        :
+        <section>
+            {/* The error message displayed at the top if there is one (assertive means announced immediately when the focus is put on the error message) */}
+            <p ref={errRef} className={errMsg ? "errmsg" : "offscreen"} aria-live="assertive">{errMsg}</p>
+            <h1>Forgot Your Password?</h1>
+            
+            <form>
+                <label htmlFor='email'>Please enter your account's email address: </label>
+                <input
+                    type="email"
+                    id="email"
+                    onChange={(e) => setEmail(e.target.value)}
+                    value={email}
+                    required
+                ></input>
+                <button onClick={handleSubmit}>Request Password Reset</button>
+            </form>
+
+            <br />
+            <Link to="/">Go Home</Link>
+            <br />
+        </section>
 )
 }
 
