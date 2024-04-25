@@ -2,6 +2,7 @@ import {useRef, useState, useEffect, useContext} from 'react';
 //Created a global state with use context for the app
 import AuthContext from "../context/AuthProvider"
 import axios from '../api/axios';
+import userRoles from '../functions/dictionaries';
 import useAuth from '../hooks/useAuth';
 import { Link, useNavigate, useLocation} from 'react-router-dom';
 
@@ -77,13 +78,11 @@ const Login = () => {
                     withCredentials: true
                 }
             );
-            //Get the CSRF token from the response data
-            //! This access token is not used as a csrf token, could change this to represent a level of user access
-            const accessToken = response?.data?.csrf_token;
+            // Get the access level from the stored user level in the database
             const accessLevel = response?.data?.userlevel;
             //Saved in the global context
-            // TODO change the user level to an access token representing a user level, for different user types
-            setAuth({user, accessLevel: ["AnyUser", accessLevel]});
+            //  Access level now set to access codes provided in the dictionary userRoles
+            setAuth({user, accessLevel: [userRoles["AuthUser"], userRoles[accessLevel]]});
             setUser('');
             setPwd('');
             navigate(from, { replace: true});

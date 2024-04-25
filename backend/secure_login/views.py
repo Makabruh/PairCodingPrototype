@@ -83,7 +83,10 @@ class UserLoginAPIView(APIView):
                     # Use the Django login function that creates a sessionid and token for the frontend and backend
                     login(request, authenticatedUser)
                     # Create a session storing the username and the userLevel within the session
-                    create_session(request, username, ["AnyUser", userTest.userLevel])
+                    create_session(request, username, ["AuthUser", userTest.userLevel])
+                    # Reset the Password Attempts Left back to 3 on a successful login
+                    userTest.passwordAttemptsLeft = 3
+                    userTest.save()
                     # Return the userLevel to the frontend
                     return Response({"userlevel": userTest.userLevel}, status=status.HTTP_200_OK)
                 else:
