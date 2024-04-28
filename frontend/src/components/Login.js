@@ -4,6 +4,7 @@ import AuthContext from "../context/AuthProvider"
 import axios from '../api/axios';
 import userRoles from '../functions/dictionaries';
 import useAuth from '../hooks/useAuth';
+import getCookie from '../functions/getCookie';
 import { Link, useNavigate, useLocation} from 'react-router-dom';
 
 // const bcrypt = require('bcryptjs');
@@ -52,8 +53,6 @@ const Login = () => {
                     },
                     withCredentials: true
                 });
-                const loginToken = response?.data?.csrf_token;
-                console.log("fetched: " + loginToken);
             } catch (error) {
                 if(!error?.response){
                     console.log('No Server Response')
@@ -68,14 +67,16 @@ const Login = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        const csrftoken = getCookie('csrftoken');
+        console.log(csrftoken)
         try {
             const response = await axios.post(LOGIN_URL, 
                 JSON.stringify({ username: user, password: pwd}),
                 {
                     headers: { 
                         'Content-Type': 'application/json',
+                        'X-CSRFToken' : csrftoken,
                     },
-                    withCredentials: true
                 }
             );
             // Get the access level from the stored user level in the database
