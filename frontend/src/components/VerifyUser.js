@@ -62,11 +62,15 @@ const VerifyUser = () => {
         }
         catch (error){
             if (!error?.response){
-                console.log('No Server Response');
+                setErrMsg('No Server Response');
+            } else if (error.response?.status === 401) {
+                setErrMsg('Incorrect Password')
+            } else if (error.response?.status === 400) {
+                setErrMsg('Please enter your password')
             } else {
-                console.log('Password Change Failed')
+                setErrMsg('Something went wrong')
             }
-            //errRef.current.focus();
+            errRef.current.focus();
         }
 
     }
@@ -93,11 +97,15 @@ const VerifyUser = () => {
         }
         catch (error){
             if (!error?.response){
-                console.log('No Server Response');
+                setErrMsg('No Server Response');
+            } else if (error.response?.status === 401) {
+                setErrMsg('Incorrect OTP')
+            } else if (error.response?.status === 400) {
+                setErrMsg('Please enter your OTP')
             } else {
-                console.log('Password Change Failed')
+                setErrMsg('Something went wrong')
             }
-            //errRef.current.focus();
+            errRef.current.focus();
         }
 
     }
@@ -107,6 +115,7 @@ const VerifyUser = () => {
             {/* This is displayed if the user is not logged in */}
             {!auth.user ? (
                     <section>
+                        <p ref={errRef} className={errMsg ? "errmsg" : "offscreen"} aria-live="assertive">{errMsg}</p>
                         <h1>Reset Your Password Here</h1>
                         <form>
                             <label htmlFor="otp-code">Enter your OTP</label>

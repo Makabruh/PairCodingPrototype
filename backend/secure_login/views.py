@@ -12,6 +12,8 @@ from django.core.mail import send_mail
 from django.http import JsonResponse
 from datetime import datetime, timedelta
 import random
+from . encryption import *
+
 #from rest_framework_simplejwt.tokens import RefreshToken
 
 def create_session(request, username, userlevel):
@@ -137,8 +139,17 @@ class PasswordResetView(APIView):
     permission_classes = (permissions.AllowAny,)
 
     def post(self, request):
+        # Get the verification codes from the backend and frontend - these will need to match
+        # Backend code was stored in the session during VerifyUser view
+        # Frontend code was posted as a HttpOnly cookie (duration 15 mins)
         verificationCodeBackend = request.session.get('verification')
-        verificationCodeFrontend = request.COOKIES.get('accountVerification')
+        cookieValue = request.COOKIES.get('accountVerification').strip()
+
+        #TODO - Better way of trimming string
+        reducedCookieValue = cookieValue[2:]
+        reducedCookieValue = reducedCookieValue[:-1]
+        
+        verificationCodeFrontend = decryptData(reducedCookieValue)
         #Get the current user object
         username = request.session.get('username')
 
@@ -148,40 +159,48 @@ class PasswordResetView(APIView):
                 # Instantiate the serializer
                 serializer = PasswordSerializer(data=request.data)
                 newPassword = request.data.get("password")
+                # Get the user object using the username stored in the session (this will either be the logged in session or the temporary session)
                 userObject = UserInfo.objects.get(username=username)
                 #! TODO - This will need to become bcrypt when we switch over
+                # Hash the new password input by the user
                 hashedNewPassword = make_password(newPassword)
+                # Get the hashed old password for comparison
                 hashedOldPassword = userObject.password
-                print(hashedNewPassword)
-                print(hashedOldPassword)
+                # If the new password hash and old password hash are the same then the user has entered the same password - not allowed
                 if (hashedNewPassword != hashedOldPassword):
+                    # Set the password field of the user object to the new hashed password
                     userObject.password = hashedNewPassword
+                    # Unlock the account
                     userObject.accountLocked = False
+                    # Set the password attempts to 3
                     userObject.passwordAttemptsLeft = 3
+                    # Save these changes
                     userObject.save()
+                    # Delete the temporary session - the actual logged in session will close on calling save()
                     request.session.flush()
-                    #TODO Close session here
                     return Response({"message": "Password changed"}, status=status.HTTP_200_OK)
+                # If their new and old passwords are the same
                 else:
                     return Response({"message": "Password needs to be new"}, status=status.HTTP_406_NOT_ACCEPTABLE)
-
+            # If the serializer fails, this could be a XSS attack
             except serializers.ValidationError as e:
                 # This can be used to check the errors in the Django server
                 print(e.detail)
-                #TODO Close session here
                 request.session.flush()
                 return Response({"message": "Validation error", "errors": e.detail}, status=status.HTTP_400_BAD_REQUEST)
+        # If the codes are not the same then the cookie may have expired or this could be a XSS attack
         else:
-            #TODO Close session here
             request.session.flush()
             return Response({"message": "Verification Incorrect"}, status=status.HTTP_401_UNAUTHORIZED)
 
-
 class MFA_Email(APIView):
+    # Allow anyone to request an email - for example if using forgotpassword, will not be logged in
     permission_classes = (permissions.AllowAny,)
 
     def post(self, request):
+        # Instantiate the serializer
         serializer = MFA_EmailSerializer(data=request.data)
+        # Check that the serializer is valid
         if serializer.is_valid(raise_exception=True):
             #TODO - add in request_reason logic - this will be 'forgotpassword'
             sendEmail = request.data.get('email')
@@ -220,6 +239,21 @@ class VerifyUser(APIView):
     # We do not want to include 'authentication_classes = (SessionAuthentication,)' here as that will invalidate the session after the transaction
     permission_classes = (permissions.AllowAny,)
 
+    def verify(self, request):
+        # Create a random verification code of 12 numbers or letters
+        verificationCode = ''.join(random.choices('0123456789abcdefghijklmnopqrstuvwxyz', k=12))
+        # Encrypt this code using the Fernet library - see encryption.py
+        encryptedVerificationCode = encryptData(verificationCode)
+        # Store the verification code in the session
+        request.session['verification'] = verificationCode
+        # Build the response
+        response = JsonResponse({"message": "Verified User"}, status=status.HTTP_200_OK)
+        # Set the HTTPOnly cookie with an expiration time of 15 mins
+        expiration_time = datetime.now() + timedelta(minutes=15)
+        # Build the HttpOnly cookie containing the verification code
+        response.set_cookie('accountVerification', encryptedVerificationCode, httponly=True, expires=expiration_time)
+        return response
+
     #TODO Could make this more maintainable by introducing a verify function that creates the code and constructs and sends the response
     def post(self, request):
         #Get the current user object
@@ -236,19 +270,16 @@ class VerifyUser(APIView):
                     # Check the OTP against the user's OTP in the database
                     otp_input = request.data.get('password')
                     username = request.data.get('username')
+                    # Get the user object from the username posted = this comes from the URL (see React params)
                     userObject = UserInfo.objects.get(username=username)
                     otp_in_database = userObject.OTP
                     if not (otp_input == otp_in_database):
-                        return Response({"message": "OTP Incorrect"}, status=status.HTTP_400_BAD_REQUEST)
-                    # Store a code in the session (for the OTP route, a session will be created)
-                    verificationCode = "2201"
+                        return Response({"message": "OTP Incorrect"}, status=status.HTTP_401_UNAUTHORIZED)
+                    # Create a temporary session for those who have correctly input their OTP
                     create_session(request, username, ['VerifiedButNotLogged'])
-                    request.session['verification'] = verificationCode
-                    response = JsonResponse({"message": "Verified User"}, status=status.HTTP_200_OK)
-                    # Set the HTTPOnly cookie with an expiration time of 15 mins
-                    expiration_time = datetime.now() + timedelta(minutes=15)
-                    response.set_cookie('accountVerification', verificationCode, httponly=True, expires=expiration_time)
-                    return response
+                    # Use the verify function to build the response
+                    verifiedResponse = self.verify(request)
+                    return verifiedResponse
             except serializers.ValidationError as e:
                 # This can be used to check the errors in the Django server
                 print(e.detail)
@@ -266,16 +297,11 @@ class VerifyUser(APIView):
                     username = request.data.get('username')
                     # Check the current details using Django's check_password function (this is needed due to make_password generating a new hash each time)
                     if not check_password(currentPassword, passwordInDatabase):
-                        return Response({"message": "Password Incorrect"}, status=status.HTTP_400_BAD_REQUEST)
-                    # If logged in, there is no need to return the user
-                    # Store a code in the session
-                    verificationCode = "2201"
-                    request.session['verification'] = verificationCode
-                    response = JsonResponse({"message": "Verified User"}, status=status.HTTP_200_OK)
-                    # Set the HTTPOnly cookie with an expiration time of 15 mins
-                    expiration_time = datetime.now() + timedelta(minutes=15)
-                    response.set_cookie('accountVerification', verificationCode, httponly=True, expires=expiration_time)
-                    return response
+                        return Response({"message": "Password Incorrect"}, status=status.HTTP_401_UNAUTHORIZED)
+                    # If logged in, the session is already open
+                    # Use the verify function to build the response
+                    verifiedResponse = self.verify(request)
+                    return verifiedResponse
             except serializers.ValidationError as e:
                 # This can be used to check the errors in the Django server
                 print(e.detail)
