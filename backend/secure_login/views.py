@@ -23,7 +23,14 @@ def create_session(request, username, userlevel):
 def access_session(request):
     request.session.get('username')
 
-
+class ForceCRSFAPIView(APIView):
+    @classmethod
+    def as_view(cls, **initkwargs):
+        # Force enables CSRF protection.  This is needed for unauthenticated API endpoints
+        # because DjangoRestFramework relies on SessionAuthentication for CSRF validation
+        view = super().as_view(**initkwargs)
+        view.csrf_exempt = False
+        return view
 
 class UserRegistrationAPIView(APIView):
     permission_classes = (permissions.AllowAny,)
@@ -52,7 +59,7 @@ class UserRegistrationAPIView(APIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
-class UserLoginAPIView(APIView):
+class UserLoginAPIView(ForceCRSFAPIView):
     #Also accessed by anyone and uses session authentication
     permission_classes = (permissions.AllowAny,)
     authentication_classes = (SessionAuthentication,)
@@ -60,9 +67,8 @@ class UserLoginAPIView(APIView):
     def get(self, request):
         # Create the token for login
         csrf_token = get_token(request)
-        # Store the token for login purposes
         # On login, it will be consumed and re-issued with the session
-        #TODO
+        #? Remove the CSRF Token from the response??
         return Response({"csrf_token": csrf_token}, status=status.HTTP_200_OK)
 
     def post(self, request):
@@ -85,7 +91,10 @@ class UserLoginAPIView(APIView):
                     # Use the Django login function that creates a sessionid and token for the frontend and backend
                     login(request, authenticatedUser)
                     # Create a session storing the username and the userLevel within the session
-                    create_session(request, username, ["AnyUser", userTest.userLevel])
+                    create_session(request, username, ["AuthUser", userTest.userLevel])
+                    # Reset the Password Attempts Left back to 3 on a successful login
+                    userTest.passwordAttemptsLeft = 3
+                    userTest.save()
                     # Return the userLevel to the frontend
                     return Response({"userlevel": userTest.userLevel}, status=status.HTTP_200_OK)
                 else:

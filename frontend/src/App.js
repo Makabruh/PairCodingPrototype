@@ -1,4 +1,5 @@
 import './App.css';
+import userRoles from './functions/dictionaries';
 import Login from './components/Login';
 import Register from './components/Register';
 import Home from './components/Home';
@@ -34,20 +35,20 @@ function App(){
         <Route path="verifyuser/:username" element={<VerifyUser />} />
 
         {/* we want to protect these routes */}
-        <Route element={<RequireAuth allowedRoles={["AnyUser"]}/>}>
+        <Route element={<RequireAuth allowedRoles={[userRoles["AuthUser"]]}/>}>
           <Route path="/" element={<Home />} />
           <Route path="user" element={<CurrentUser />} />
         </Route>
 
-        <Route element={<RequireAuth allowedRoles={["Employer"]}/>}>
+        <Route element={<RequireAuth allowedRoles={[userRoles["Employer"]]}/>}>
           <Route path="employer" element={<Employer />} />
         </Route>
 
-        <Route element={<RequireAuth allowedRoles={["TrainingProvider"]}/>}>
+        <Route element={<RequireAuth allowedRoles={[userRoles["TrainingProvider"]]}/>}>
           <Route path="trainingprovider" element={<TrainingProvider />} />
         </Route>
 
-        <Route element={<RequireAuth allowedRoles={["Apprentice"]}/>}>
+        <Route element={<RequireAuth allowedRoles={[userRoles["Apprentice"]]}/>}>
           <Route path="apprentice" element={<Apprentice />} />
         </Route>
  
