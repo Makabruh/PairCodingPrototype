@@ -263,7 +263,6 @@ class VerifyUser(APIView):
         response.set_cookie('accountVerification', encryptedVerificationCode, httponly=True, expires=expiration_time)
         return response
 
-    #TODO Could make this more maintainable by introducing a verify function that creates the code and constructs and sends the response
     def post(self, request):
         #Get the current user object
         user = request.user
