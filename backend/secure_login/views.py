@@ -13,6 +13,8 @@ from django.http import JsonResponse
 from datetime import datetime, timedelta
 import random
 from . encryption import *
+from django_ratelimit.decorators import ratelimit
+
 
 #from rest_framework_simplejwt.tokens import RefreshToken
 
@@ -71,6 +73,8 @@ class UserLoginAPIView(ForceCRSFAPIView):
         #? Remove the CSRF Token from the response??
         return Response({"csrf_token": csrf_token}, status=status.HTTP_200_OK)
 
+    # Block post requests from the same ip if more than 2 in past 5 minutes
+    @ratelimit(key='ip', method='POST', rate='2/5m')
     def post(self, request):
         # Get the username from the data
         username = request.data.get('username')
@@ -112,6 +116,7 @@ class UserLoginAPIView(ForceCRSFAPIView):
             return Response({"message": "Account Locked"}, status=status.HTTP_403_FORBIDDEN)
         else:
             return Response({"message": "Username not in database"}, status=status.HTTP_400_BAD_REQUEST)
+        
 
 class UserLogout(APIView):
     permission_classes = (IsAuthenticated,)
@@ -263,6 +268,8 @@ class VerifyUser(APIView):
         response.set_cookie('accountVerification', encryptedVerificationCode, httponly=True, expires=expiration_time)
         return response
 
+    # Block post requests from the same ip if more than 2 in past 5 minutes
+    @ratelimit(key='ip', method='POST', rate='2/5m')
     def post(self, request):
         #Get the current user object
         user = request.user
