@@ -5,3 +5,4 @@ mysqlclient==2.2.4
 djangorestframework_simplejwt==5.3.1
 cryptography==42.0.5
 bcrypt==4.1.2
+django-ratelimit==4.1.0
