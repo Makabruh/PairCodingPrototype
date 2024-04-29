@@ -12,6 +12,8 @@ from django.core.mail import send_mail
 from django.http import JsonResponse
 from datetime import datetime, timedelta
 import random
+from . encryption import *
+
 #from rest_framework_simplejwt.tokens import RefreshToken
 
 def create_session(request, username, userlevel):
@@ -141,7 +143,13 @@ class PasswordResetView(APIView):
         # Backend code was stored in the session during VerifyUser view
         # Frontend code was posted as a HttpOnly cookie (duration 15 mins)
         verificationCodeBackend = request.session.get('verification')
-        verificationCodeFrontend = request.COOKIES.get('accountVerification')
+        cookieValue = request.COOKIES.get('accountVerification').strip()
+
+        #TODO - Better way of trimming string
+        reducedCookieValue = cookieValue[2:]
+        reducedCookieValue = reducedCookieValue[:-1]
+        
+        verificationCodeFrontend = decryptData(reducedCookieValue)
         #Get the current user object
         username = request.session.get('username')
 
@@ -234,6 +242,8 @@ class VerifyUser(APIView):
     def verify(self, request):
         # Create a random verification code of 12 numbers or letters
         verificationCode = ''.join(random.choices('0123456789abcdefghijklmnopqrstuvwxyz', k=12))
+        # Encrypt this code using the Fernet library - see encryption.py
+        encryptedVerificationCode = encryptData(verificationCode)
         # Store the verification code in the session
         request.session['verification'] = verificationCode
         # Build the response
@@ -241,7 +251,7 @@ class VerifyUser(APIView):
         # Set the HTTPOnly cookie with an expiration time of 15 mins
         expiration_time = datetime.now() + timedelta(minutes=15)
         # Build the HttpOnly cookie containing the verification code
-        response.set_cookie('accountVerification', verificationCode, httponly=True, expires=expiration_time)
+        response.set_cookie('accountVerification', encryptedVerificationCode, httponly=True, expires=expiration_time)
         return response
 
     #TODO Could make this more maintainable by introducing a verify function that creates the code and constructs and sends the response
