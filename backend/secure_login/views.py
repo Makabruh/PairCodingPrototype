@@ -2,6 +2,8 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from . models import UserInfo
 from . serializer import *
+from . encryption import *
+from . hashing import *
 from django.contrib.auth import login, logout
 from rest_framework.authentication import SessionAuthentication
 from rest_framework import permissions, status
@@ -12,7 +14,7 @@ from django.core.mail import send_mail
 from django.http import JsonResponse
 from datetime import datetime, timedelta
 import random
-from . encryption import *
+
 
 #from rest_framework_simplejwt.tokens import RefreshToken
 
@@ -45,7 +47,8 @@ class UserRegistrationAPIView(APIView):
                 return Response({"error": "Username is already taken."}, status=status.HTTP_400_BAD_REQUEST)
             
             #The password needs to be hashed when stored in order to authenticate on login
-            hashed_password = make_password(password)
+            #!HERE - make_password
+            hashed_password = hash_password(password)
             serializer.validated_data['password'] = hashed_password
 
             serializer.save()
@@ -163,7 +166,8 @@ class PasswordResetView(APIView):
                 userObject = UserInfo.objects.get(username=username)
                 #! TODO - This will need to become bcrypt when we switch over
                 # Hash the new password input by the user
-                hashedNewPassword = make_password(newPassword)
+                #!HERE - make_password
+                hashedNewPassword = hash_password(newPassword)
                 # Get the hashed old password for comparison
                 hashedOldPassword = userObject.password
                 # If the new password hash and old password hash are the same then the user has entered the same password - not allowed
@@ -254,7 +258,6 @@ class VerifyUser(APIView):
         response.set_cookie('accountVerification', encryptedVerificationCode, httponly=True, expires=expiration_time)
         return response
 
-    #TODO Could make this more maintainable by introducing a verify function that creates the code and constructs and sends the response
     def post(self, request):
         #Get the current user object
         user = request.user

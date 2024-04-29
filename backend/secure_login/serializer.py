@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from . models import *
 from django.contrib.auth import get_user_model, authenticate
+from . hashing import *
 
 # For registering a user
 class RegisterSerializer(serializers.ModelSerializer):
@@ -23,13 +24,26 @@ class LoginSerializer(serializers.ModelSerializer):
     def check_user(self, clean_data):
         username = clean_data.get('username')
         password = clean_data.get('password')
-        user = authenticate(username=username, password=password)
-        if not user:
+        #!HERE
+        
+        userObject = UserInfo.objects.get(username=username)
+        passwordInDatabase = userObject.password
+        userVerified = check_password(password, passwordInDatabase)
+        if userVerified:
+            return userObject
+        if not userVerified:
             print("User not found")
             # TODO Validation errors
             return(None)
             #raise ValidationError('User not found')
-        return user
+
+        # user = authenticate(username=username, password=password)
+        # if not user:
+        #     print("User not found")
+        #     # TODO Validation errors
+        #     return(None)
+        #     #raise ValidationError('User not found')
+        # return user
     
 # For checking which user is logged in
 class UserSerializer(serializers.ModelSerializer):
