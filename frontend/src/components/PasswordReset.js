@@ -23,7 +23,7 @@ const PasswordReset = () => {
     //Get the CSRF token from the cookies
     const csrftoken = getCookie('csrftoken');
     //Get the auth state to check for user
-    const { auth } = useAuth();
+    const { auth, setAuth } = useAuth();
     
     //States for the new password
     const [newPwd, setNewPwd] = useState('');
@@ -37,6 +37,9 @@ const PasswordReset = () => {
 
     // Refs
     const errRef = useRef();
+
+    // Navigate
+    const navigate = useNavigate();
 
     // States
     const [errMsg, setErrMsg] = useState('');
@@ -83,7 +86,8 @@ const PasswordReset = () => {
             setNewPwd('');
             setNewMatchPwd('');
             console.log("Password change success!")
-            //TODO Blank auth and redirect
+            setAuth = ('')
+            navigate('/login');
         }
         catch (error){
             if (!error?.response){

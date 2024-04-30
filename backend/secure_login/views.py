@@ -1,3 +1,4 @@
+from django.conf import settings
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from . models import UserInfo
@@ -12,6 +13,15 @@ from django.core.mail import send_mail
 from django.http import JsonResponse
 from datetime import datetime, timedelta
 import random
+import mailslurp_client
+
+# create a mailslurp configuration
+configuration = mailslurp_client.Configuration()
+configuration.api_key['x-api-key'] = "83257037814353bfb46377ac6a80d96ac32a6e5446bf805a6f3b53913a34aa3f"
+with mailslurp_client.ApiClient(configuration) as api_client:
+    # create an inbox
+    test_inbox_controller = mailslurp_client.InboxControllerApi(api_client)
+
 #from rest_framework_simplejwt.tokens import RefreshToken
 
 def create_session(request, username, userlevel):
@@ -20,6 +30,27 @@ def create_session(request, username, userlevel):
 
 def access_session(request):
     request.session.get('username')
+
+def send_otp_in_mail(user,otp):
+
+    # send email
+    #TODO Add try block to cover email failing to send.
+    opts = mailslurp_client.SendEmailOptions()
+    opts.to = [user.email]
+    opts.subject = 'One Time Passcode'
+    opts.body = f'Hi {user.username}, here is your OTP for secure login \n Otp is: {otp}'
+    opts.is_html = True
+    test_inbox_controller.send_email('d155a520-b321-47a5-9443-31c1d85de3b5', send_email_options=opts)
+
+
+    #! Uses send_mail instead of mailslurp server.
+    # subject = 'One Time Passcode'
+    # message = f'Hi {user.username}, here is your OTP for secure login \n Otp is: {otp}'
+    # email_from = settings.EMAIL_HOST_USER
+    # print(email_from)
+    # # recipient_list = [user.email, ]
+    # recipient_list = ['userpeter-4552-8d4f@mailslurp.mx']
+    # send_mail(subject, message, email_from, recipient_list, fail_silently=False)
 
 class ForceCRSFAPIView(APIView):
     @classmethod
@@ -205,22 +236,14 @@ class MFA_Email(APIView):
                     user.OTP = generatedOTP
                     user.save()
                     #Save the OTP to the user
-                    
-                    #! TODO This will need to be set up with the SMTP host and port in settings.py
-                    # send_mail(
-                    #     "CoolAMS - Forgotten Password Request",
-                    #     "Code - ", generatedOTP,
-                    #     "coolams@example.com",
-                    #     [sendEmail],
-                    #     fail_silently=False,
-                    # )
-                    #! This will need to be removed once it has been set up
-                    print(generatedOTP)
+
+                    send_otp_in_mail(user, generatedOTP)
+
                 #If there is no user with this email
                 except UserInfo.DoesNotExist:
                     print("user not found")
                     return Response({"message": "No user with this email"}, status=status.HTTP_400_BAD_REQUEST)
-            return Response({"message": "Email will be sent"}, status=status.HTTP_200_OK)
+            return Response({"message": "Email will be sent", 'username': user.username} , status=status.HTTP_200_OK)
         else:
             print("not valid")
             return Response({"message": "Incorrect data format"}, status=status.HTTP_400_BAD_REQUEST)

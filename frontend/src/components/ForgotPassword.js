@@ -13,6 +13,9 @@ const PasswordReset = () => {
     const [email, setEmail] = useState('');
     const [emailFocus, setEmailFocus] = useState(false);
 
+    // Navigate
+    const navigate = useNavigate();
+
     // Refs
     const errRef = useRef();
 
@@ -35,6 +38,9 @@ const PasswordReset = () => {
             );
             setEmail('');
             console.log("Sending email!")
+            //! Does this response need to be encoded?
+            const username = response?.data?.username;
+            navigate('/verifyuser/' + username);
         }
         catch (error){
             if (!error?.response){
