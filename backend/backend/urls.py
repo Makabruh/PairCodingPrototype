@@ -1,6 +1,12 @@
 from django.contrib import admin
 from django.urls import path
 from secure_login.views import *
+from rest_framework.routers import DefaultRouter
+
+#!CHANGES
+# router = DefaultRouter()
+# router.register('trainingprovider', TrainingProviderViewset, basename="trainingprovider")
+# urlpatterns = router.urls
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -14,4 +20,5 @@ urlpatterns = [
     path('verifyuser', VerifyUser.as_view(), name="verifyuser"),
     # TODO Testing remove afterwards
     path('query', QueryView.as_view(), name="query"),
+    path('trainingprovider', TrainingProviderViewset.as_view(), name="trainingprovider"),
 ]

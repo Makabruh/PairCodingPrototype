@@ -15,7 +15,9 @@ from django.http import JsonResponse
 from datetime import datetime, timedelta
 import random
 from django_ratelimit.decorators import ratelimit
-
+#!CHANGES
+from rest_framework import viewsets
+from rest_framework.mixins import ListModelMixin
 
 #from rest_framework_simplejwt.tokens import RefreshToken
 
@@ -25,6 +27,22 @@ def create_session(request, username, userlevel):
 
 def access_session(request):
     request.session.get('username')
+
+#!CHANGES
+# class TrainingProviderViewset(ListModelMixin, viewsets.GenericViewSet):
+#     permission_classes = (permissions.AllowAny,)
+#     def get(self, request):
+#         queryset = TrainingProvider.objects.all()
+#         serializer_class = TrainingProviderSerializer
+
+class TrainingProviderViewset(APIView):
+    permission_classes = (permissions.AllowAny,)
+    
+    def get(self, request):
+        queryset = TrainingProvider.objects.all()
+        company_names = [provider.company_name for provider in queryset]
+        print(company_names)
+        return Response(company_names)
 
 
 
@@ -110,7 +128,6 @@ class UserLoginAPIView(APIView):
         else:
             return Response({"message": "Username not in database"}, status=status.HTTP_400_BAD_REQUEST)
         
-
 class UserLogout(APIView):
     permission_classes = (IsAuthenticated,)
     authentication_classes = (SessionAuthentication,)
@@ -331,6 +348,13 @@ class QueryView(APIView):
             for output in UserInfo.objects.filter(username=user)]
         
         return Response(output[0])
+    
+    #TODO TESTING REMOVE
+    def get(self, request):
+        queryset = TrainingProvider.objects.all()
+        company_names = [provider.company_name for provider in queryset]
+        print(company_names)
+        return Response(company_names)
 
     
 

@@ -5,6 +5,7 @@ import { faCheck, faTimes, faInfoCircle } from "@fortawesome/free-solid-svg-icon
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 //Import Axios
 import axios from '../api/axios';
+import { AxiosInstance } from "../api/axios";
 
 //Backend details
 const REGISTER_URL = '/register';
@@ -50,6 +51,11 @@ const Register = () => {
     const [validUserLevel, setValidUserLevel] = useState(false);
     const [userLevelFocus, setUserLevelFocus] = useState(false);
 
+    //For training provider - on extendable forms maybe this will be seperated into each
+    const [trainingProvider, setTrainingProvider] = useState('');
+    const [validTrainingProvider, setValidTrainingProvider] = useState(false);
+    const [trainingProviderFocus, setTrainingProviderFocus] = useState(false);
+
     //States for error messages and successful submission
     const [errMsg, setErrMsg] = useState('');
     const [success, setSuccess] = useState(false);
@@ -91,6 +97,20 @@ const Register = () => {
         setErrMsg('');
     }, [user, pwd, matchPwd, email])
 
+    //!CHANGES
+    // Use effect call on render that calls the axios function to get the fk data
+    useEffect(() => {
+        GetSignUpData();
+    },[])
+
+    // Axios call to get the training provider data that will be the foreign key in the user registration
+    const GetSignUpData = () => {
+        AxiosInstance.get('trainingprovider').then((res) => {
+            setTrainingProvider(res.data)
+            console.log(res.data)
+        })
+    }
+
     const handleSubmit = async (e) => {
         e.preventDefault();
 
@@ -111,7 +131,7 @@ const Register = () => {
 
         try {
             const response = await axios.post(REGISTER_URL, JSON.stringify(
-                { username: user, password: pwd, userLevel: userLevel, email: email }),
+                { username: user, password: pwd, userLevel: userLevel, email: email, trainingProvider }),
                 {
                     headers: { 'Content-Type': 'application/json' },
                     withCredentials: true
@@ -306,7 +326,7 @@ const Register = () => {
                     Must select type of user
                 </p>
                 <label htmlFor="selectUserLevel">
-                            Select the Type of User...
+                            Select your Type of User...
                         </label>
                 <select id="selectUserLevel" onChange={(e) => setUserLevel(e.target.value)}>
                     <option
@@ -324,6 +344,17 @@ const Register = () => {
                         name="userLevel"
                         value="Employer">
                     Employer</option>
+                </select>
+
+                <p id="userLevelNote" className={trainingProviderFocus && !validTrainingProvider ? "instructions" : "offscreen"}>
+                    <FontAwesomeIcon icon={faInfoCircle} />
+                    Please select your associated Training Provider
+                </p>
+                <label htmlFor="selectTrainingProvider">
+                    Select your Training Provider
+                </label>
+                <select id="selectTrainingProvider" onChange={(e) => setTrainingProvider(e.target.value)}>
+
                 </select>
                 
 

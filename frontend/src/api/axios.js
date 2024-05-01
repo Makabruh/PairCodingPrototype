@@ -20,6 +20,16 @@ export const client = axios.create({
     withCredentials: true 
 });
 
+//!CHANGES
+export const AxiosInstance = axios.create({
+    baseURL: BASE_URL,
+    timeout: 5000,
+    headers: {
+        "Content-Type": "application/json",
+        accept: "application/json"
+    }
+})
+
 //For refreshing tokens & JWT
 export const axiosPrivate = axios.create({
     baseURL: BASE_URL,

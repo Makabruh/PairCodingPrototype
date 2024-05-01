@@ -3,12 +3,17 @@ from . models import *
 from django.contrib.auth import get_user_model, authenticate
 from . hashing import *
 
+class TrainingProviderSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TrainingProvider
+        fields = ('name')
+
 # For registering a user
 class RegisterSerializer(serializers.ModelSerializer):
     # The serializer for creating a user
     class Meta:
         model = UserInfo
-        fields = ['username', 'password', 'userLevel', 'email']
+        fields = ['username', 'password', 'userLevel', 'email', 'associated_training_provider']
 
 # For logging in a user
 class LoginSerializer(serializers.ModelSerializer):
@@ -25,7 +30,7 @@ class LoginSerializer(serializers.ModelSerializer):
         username = clean_data.get('username')
         password = clean_data.get('password')
         #!HERE
-        
+
         userObject = UserInfo.objects.get(username=username)
         passwordInDatabase = userObject.password
         userVerified = check_password(password, passwordInDatabase)
