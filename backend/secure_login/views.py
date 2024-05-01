@@ -35,7 +35,9 @@ class ForceCRSFAPIView(APIView):
         # because DjangoRestFramework relies on SessionAuthentication for CSRF validation
         view = super().as_view(**initkwargs)
         view.csrf_exempt = False
-        return view#!CHANGES
+        return view
+    
+#!CHANGES
 # class TrainingProviderViewset(ListModelMixin, viewsets.GenericViewSet):
 #     permission_classes = (permissions.AllowAny,)
 #     def get(self, request):
