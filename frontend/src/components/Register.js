@@ -354,7 +354,7 @@ const Register = () => {
                     Select your Training Provider
                 </label>
                 <select id="selectTrainingProvider" onChange={(e) => setTrainingProvider(e.target.value)}>
-
+                    
                 </select>
                 
 
