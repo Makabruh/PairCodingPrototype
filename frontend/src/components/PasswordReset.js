@@ -36,6 +36,9 @@ const PasswordReset = () => {
     // Refs
     const errRef = useRef();
 
+    // Navigate
+    const navigate = useNavigate();
+
     // States
     const [errMsg, setErrMsg] = useState('');
     const [passwordReset, setPasswordReset] = useState(false);
@@ -81,9 +84,10 @@ const PasswordReset = () => {
             );
             setNewPwd('');
             setNewMatchPwd('');
-            //Reset the auth to blank and lead the user to re-login
+            console.log("Password change success!")
             setAuth({});
             setPasswordReset(true);
+            navigate('/login');
         }
         catch (error){
             if (!error?.response){
