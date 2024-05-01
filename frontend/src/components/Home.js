@@ -22,6 +22,7 @@ const Home = () => {
     const [errMsg, setErrMsg] = useState('');
     // setUser(auth.user);
 
+    //? Does this need to be in the logout async function?
     const csrftoken = getCookie('csrftoken');
 
     const logout = async (e) => {

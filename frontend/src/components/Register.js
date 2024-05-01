@@ -337,7 +337,7 @@ const Register = () => {
                     <option
                         id="training-provider"
                         name="userLevel"
-                        value="Training Provider">
+                        value="TrainingProvider">
                     Training Provider</option>
                     <option
                         id="employer"

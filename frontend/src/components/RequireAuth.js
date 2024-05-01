@@ -1,5 +1,6 @@
 import {useLocation, Navigate, Outlet, useNavigate} from 'react-router-dom';
 import axios from '../api/axios';
+import userRoles from '../functions/dictionaries';
 import useAuth from "../hooks/useAuth";
 import getCookie from '../functions/getCookie';
 import {useEffect} from 'react';
@@ -25,7 +26,6 @@ const RequireAuth = ({allowedRoles}) => {
 
         // e.preventDefault();
         try {
-            console.log(csrftoken);
             const response = await axios.post(RESTORE_SESSION_URL, 
                 JSON.stringify({}),
                 {
@@ -35,10 +35,18 @@ const RequireAuth = ({allowedRoles}) => {
                     },    
                 }
             );
-            console.log(response.status);
-            console.log(response.data.user);
-            console.log(response.data.userlevel);
-            setAuth({user: response.data.user, accessLevel: response.data.userlevel});
+            // create a list of the text versions of the user roles obtained from the session
+            const differentRoles = response.data.userlevel
+            // Create an empty list to hold the access coded vesions of user access levels
+            const accessLevels = []
+            // FOr each text based role find the coded version in the dictionary userRoles and appen the empty list with them.
+            for (let i=0; i < differentRoles.length; i++){
+                accessLevels.push(userRoles[differentRoles[i]])
+            };
+            // TODO remove console log when finished testing
+            console.log("Access Levels:", accessLevels);
+            // Reset the Auth state with the current user and the coded user access levels
+            setAuth({user: response.data.user, accessLevel: accessLevels});
             navigate(from, { replace: true});
 
         }
