@@ -26,6 +26,7 @@ with mailslurp_client.ApiClient(configuration) as api_client:
 
 #from rest_framework_simplejwt.tokens import RefreshToken
 
+# Create a session and fill it will the username and user access level fields
 def create_session(request, username, userlevel):
     request.session['username'] = username
     request.session['userLevel'] = userlevel
@@ -42,7 +43,8 @@ def send_otp_in_mail(user,otp):
     opts.subject = 'One Time Passcode'
     opts.body = f'Hi {user.username}, here is your OTP for secure login \n Otp is: {otp}'
     opts.is_html = True
-    test_inbox_controller.send_email('d155a520-b321-47a5-9443-31c1d85de3b5', send_email_options=opts)
+    #! e-mail code changes when sending - will need to be updated if e-mail changes.
+    test_inbox_controller.send_email('62b83ccf-38a8-449e-b4d4-c7a70e12c94c', send_email_options=opts)
 
 
     #! Uses send_mail instead of mailslurp server.
