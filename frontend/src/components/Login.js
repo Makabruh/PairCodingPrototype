@@ -90,6 +90,7 @@ const Login = () => {
         }
         catch (err) {
             //If there is no error coming back from the server
+            let errorMessage = err.response?.data?.message;
             if(!err?.response){
                 setErrMsg('No Server Response')
             }
@@ -97,13 +98,12 @@ const Login = () => {
                 setErrMsg('Incorrect Username or Password')
             }
             else if (err.response?.status === 401) {
-                setErrMsg('Unauthorised')
+                setErrMsg(errorMessage)
             }
-            else if (err.response?.status === 403) {
-                setErrMsg('You do not have the required permissions')
+            else if (err.response?.status === 403) {   
+                setErrMsg(errorMessage)
             } else {
                 setErrMsg('Login Failed')
-                console.log("Error: Catch Statement")
             }
             errRef.current.focus();
         }

@@ -10,10 +10,11 @@ import axios from '../api/axios';
 const REGISTER_URL = '/register';
 
 //Regex statements
-//Note that email will have to be properly checked with mfa TODO
+//TODO Note that email will have to be properly checked with mfa
 const USER_REGEX = /^[a-zA-Z][a-zA-Z0-9-_]{3,23}$/;
 const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%£*]).{8,24}$/;
 const EMAIL_REGEX = /^[a-zA-Z0-9.!#$%&’*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/;
+const NAME_REGEX = /^[a-zA-Z ,.'-]{2,30}$/;
 
 //? Bcrypt - May use this going forwards
 // const bcrypt = require('bcryptjs');
@@ -25,6 +26,10 @@ const Register = () => {
     const errRef = useRef();
     // Put focus on email field
     const emailRef = useRef();
+    // Put focus on first name field
+    const firstNameRef = useRef();
+    // Put focus on surname field
+    const surnameRef = useRef();
 
     //States for user field - user tied to user input, validName a boolean for validation, userFocus tied to focus on input field
     const [user, setUser] = useState('');
@@ -49,6 +54,16 @@ const Register = () => {
     const [userLevel, setUserLevel] = useState('');
     const [validUserLevel, setValidUserLevel] = useState(false);
     const [userLevelFocus, setUserLevelFocus] = useState(false);
+
+    //States for first name
+    const [firstName, setFirstName] = useState('');
+    const [validFirstName, setValidFirstName] = useState(false);
+    const [firstNameFocus, setFirstNameFocus] = useState(false);
+
+    //States for first name
+    const [surname, setSurname] = useState('');
+    const [validSurname, setValidSurname] = useState(false);
+    const [surnameFocus, setSurnameFocus] = useState(false);
 
     //States for error messages and successful submission
     const [errMsg, setErrMsg] = useState('');
@@ -86,10 +101,22 @@ const Register = () => {
         setValidUserLevel(result);
     }, [userLevel])
 
+    //Validating the first name input field at every change
+    useEffect(() => {
+        const result = NAME_REGEX.test(firstName);
+        setValidFirstName(result);
+    }, [firstName])
+
+    //Validating the surname input field at every change
+    useEffect(() => {
+        const result = NAME_REGEX.test(surname);
+        setValidSurname(result);
+    }, [surname])
+
     //Any input state being changed requires a clearing of the error message
     useEffect(() => {
         setErrMsg('');
-    }, [user, pwd, matchPwd, email])
+    }, [user, pwd, matchPwd, email, firstName, surname])
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -111,7 +138,7 @@ const Register = () => {
 
         try {
             const response = await axios.post(REGISTER_URL, JSON.stringify(
-                { username: user, password: pwd, userLevel: userLevel, email: email }),
+                { username: user, password: pwd, userLevel: userLevel, email: email, firstName: firstName, surname: surname }),
                 {
                     headers: { 'Content-Type': 'application/json' },
                     withCredentials: true
@@ -123,6 +150,8 @@ const Register = () => {
                 setMatchPwd('');
                 setUserLevel('');
                 setEmail('');
+                setFirstName('');
+                setSurname('');
         }
         catch (error){
             if (!error?.response){
@@ -143,12 +172,13 @@ const Register = () => {
                 <section>
                     <h1>Account Created</h1>
                     <p>
-                        <a href="#">Sign In Here</a>
+                        <a href="/login">Sign In Here</a>
                     </p>
                 </section>
             ) : (
         // This is displayed if the form has not been submitted correctly yet
         // section is more semantic than div
+        <main>
         <section>
             {/* Here is our error message, using a ternary operator to check if there is an error message */}
             {/* The offscreen class name means it is still available to screen readers when there is no error message but not visible on the screen */}
@@ -310,6 +340,11 @@ const Register = () => {
                         </label>
                 <select id="selectUserLevel" onChange={(e) => setUserLevel(e.target.value)}>
                     <option
+                        id="none"
+                        name="userLevel"
+                        value="">
+                    -</option>
+                    <option
                         id="apprentice"
                         name="userLevel"
                         value="Apprentice">
@@ -342,6 +377,84 @@ const Register = () => {
                 </span>
             </p>
         </section>
+        <section>
+            <h2>Additional Details</h2>
+            {/* This is the First Name field */}
+            {/* The htmlFor needs to match the id of the input */}
+            <label htmlFor="first_name">First Name: 
+            {/* These spans provide the green check mark if the username is valid and the red cross if not*/}
+                <span className={validFirstName ? "valid" : "hide"}>
+                    <FontAwesomeIcon icon={faCheck} />
+                </span>
+                <span className={validFirstName || !firstName ? "hide" : "invalid"}>
+                    <FontAwesomeIcon icon={faTimes} />
+                </span>
+            </label>
+            <input
+                type = "text"
+                id = "first_name"
+                /* ref allows us to set focus on the input */
+                ref = {firstNameRef}
+                /* Autocomplete off because we don't want to see previous values suggested */
+                autoComplete = "off"
+                /* onChange ties the input to the userState */
+                onChange={(e) => setFirstName(e.target.value)}
+                required
+                /* aria-invalid will be set to true when the component loads because blank is an invalid username */
+                aria-invalid={validFirstName ? "false" : "true"}
+                /* This is the final thing read by the screen reader and here we give the full requirements for the field */
+                aria-describedby="uidnote"
+                /* Settinig focus */
+                onFocus={() => setFirstNameFocus(true)}
+                onBlur={() => setFirstNameFocus(false)}
+            />
+            {/* Info message for the username field */}
+            <p id="uidnote" className={firstNameFocus && firstName && !validFirstName ? "instructions" : "offscreen"}>
+                <FontAwesomeIcon icon={faInfoCircle} />
+                1 to 30 characters <br/>
+                Cannot contain a number <br/>
+                No special characters allowed
+                
+            </p>
+            {/* This is the Surame field */}
+            {/* The htmlFor needs to match the id of the input */}
+            <label htmlFor="surname">Surname: 
+            {/* These spans provide the green check mark if the username is valid and the red cross if not*/}
+                <span className={validSurname ? "valid" : "hide"}>
+                    <FontAwesomeIcon icon={faCheck} />
+                </span>
+                <span className={validSurname || !surname ? "hide" : "invalid"}>
+                    <FontAwesomeIcon icon={faTimes} />
+                </span>
+            </label>
+            <input
+                type = "text"
+                id = "surname"
+                /* ref allows us to set focus on the input */
+                ref = {surnameRef}
+                /* Autocomplete off because we don't want to see previous values suggested */
+                autoComplete = "off"
+                /* onChange ties the input to the userState */
+                onChange={(e) => setSurname(e.target.value)}
+                required
+                /* aria-invalid will be set to true when the component loads because blank is an invalid username */
+                aria-invalid={validSurname ? "false" : "true"}
+                /* This is the final thing read by the screen reader and here we give the full requirements for the field */
+                aria-describedby="uidnote"
+                /* Settinig focus */
+                onFocus={() => setSurnameFocus(true)}
+                onBlur={() => setSurnameFocus(false)}
+            />
+            {/* Info message for the username field */}
+            <p id="uidnote" className={surnameFocus && surname && !validSurname ? "instructions" : "offscreen"}>
+                <FontAwesomeIcon icon={faInfoCircle} />
+                1 to 30 characters <br/>
+                Cannot contain a number <br/>
+                No special characters allowed
+                
+            </p>
+        </section>
+        </main>
             )}</>
     )
 }

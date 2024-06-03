@@ -32,15 +32,36 @@ class UserInfo(AbstractBaseUser, PermissionsMixin):
     email = models.CharField(max_length=100, unique=True)
     passwordAttemptsLeft = models.PositiveIntegerField(default = 3, validators=[MaxValueValidator(3)])
     accountLocked = models.BooleanField(default = False)
-    #Validator for the OTP ensuring it is 8 digits long
-    OTP_validator = RegexValidator(regex=r'^\d{8}$')
-    #OTP must be 8 characters, defaults to empty
-    OTP = models.CharField(max_length=8, default='111', validators=[OTP_validator], blank=True)
+    # A total lockout of the account in case of suspicious activity - need admin level access to unblock
+    accountPermLocked = models.BooleanField(default = False)
+    #Validator for the OTP ensuring it is 6 digits long
+    OTP_validator = RegexValidator(regex=r'^\d{6}$')
+    #OTP must be 6 characters, defaults to '000001'
+    OTP = models.CharField(max_length=6, default='000001', validators=[OTP_validator], blank=True)
+    OTPAttemptsLeft = models.PositiveIntegerField(default = 3, validators=[MaxValueValidator(3)])
     # This needs to be introduced to manage previous devices but must be able to be null on sign up
     #!authenticatedDevices = models.JSONField()
     USERNAME_FIELD = 'username'
     REQUIRED_FIELDS = []
     # May need this later - from following tutorial
     objects = UserInfoManager()
+
+    # #! We now save this concurently in the view
+    # def save(self, *args, **kwargs):
+    #     super().save(*args, **kwargs)
+    #     self.create_profile()
+
+    # def create_profile(self):
+    #     UserProfile.objects.create(userinfo=self)
+
     def __str__(self):
         return self.username
+    
+
+class UserProfile(models.Model):
+    userinfo = models.OneToOneField(UserInfo,on_delete=models.CASCADE, primary_key=True)
+    firstName = models.CharField(max_length=30)
+    surname = models.CharField(max_length=30)
+
+    def __str__(self):
+        return self.userinfo.username

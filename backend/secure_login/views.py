@@ -1,7 +1,7 @@
 from django.conf import settings
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from . models import UserInfo
+from . models import UserInfo, UserProfile
 from . serializer import *
 from django.contrib.auth import login, logout
 from rest_framework.authentication import SessionAuthentication
@@ -44,7 +44,7 @@ def send_otp_in_mail(user,otp):
     opts.body = f'Hi {user.username}, here is your OTP for secure login \n Otp is: {otp}'
     opts.is_html = True
     #! e-mail code changes when sending - will need to be updated if e-mail changes.
-    test_inbox_controller.send_email('62b83ccf-38a8-449e-b4d4-c7a70e12c94c', send_email_options=opts)
+    test_inbox_controller.send_email('a412ee93-ef54-4bbc-8df2-e7f2ed3b1c57', send_email_options=opts)
 
 
     #! Uses send_mail instead of mailslurp server.
@@ -71,14 +71,27 @@ class UserRegistrationAPIView(APIView):
     def post(self, request):
         #post means that this method handles post requests to the url that calls this view
         
-        serializer = RegisterSerializer(data=request.data)
-        
+        # serializer = RegisterSerializer(data=request.data)
+        #! Remove if not needed
+        print("Reaches 0")
+        serializer = CombinedSerializer(data=request.data, many=True)   #? many=True
+        print(serializer)
+
+        #This checks that the data is valid according to the serializer
         if serializer.is_valid(raise_exception=True):
-            #This checks that the data is valid according to the serializer
-            
-            username = serializer.validated_data.get('username')
-            #Get the username from the data
-            password = serializer.validated_data.get('password')
+            print("Reaches 1")
+
+            validated_data = serializer.validated_data.pop()
+
+            user_info_data = validated_data['user_info']
+            user_profile_data = validated_data['user_profile']
+             
+            print("Reaches 2")
+            #Get the username from the serializer data
+            username = user_info_data.validated_data.get('username')
+            print(username)
+            #Get the upassword from the serializer data
+            password = user_info_data.validated_data.get('password')
             
             if UserInfo.objects.filter(username=username).exists():
                 #Check if the username is free against usernames in the database
@@ -86,9 +99,21 @@ class UserRegistrationAPIView(APIView):
             
             #The password needs to be hashed when stored in order to authenticate on login
             hashed_password = make_password(password)
-            serializer.validated_data['password'] = hashed_password
+            user_info_data.validated_data['password'] = hashed_password
 
-            serializer.save()
+            # Create model for user info
+            user_info_model = UserInfo(**user_info_data)
+            user_info_model.save()
+            #! serializer.save()  
+
+            #TODO add a success check and delete all records if not successful
+            # Create model for user profile
+            user_profile_model = UserProfile(**user_profile_data)
+            user_profile_model.save()
+
+
+
+     
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
@@ -106,11 +131,12 @@ class UserLoginAPIView(ForceCRSFAPIView):
 
     def post(self, request):
         # Get the username from the data
+        #? As the serializer has not yet been validated we cannot use: serializer.validated_data.get('username')
         username = request.data.get('username')
         # Get the actual user object in order to modify values from the model
         userTest = UserInfo.objects.get(username=username)
         # If a user object is found and the account is not locked
-        if userTest.username and userTest.accountLocked == False:
+        if userTest.username and userTest.accountLocked == False and userTest.accountPermLocked == False:
             # Instantiate the serializer
             serializer = LoginSerializer(data=request.data)
             # Check the data format with the serializer
@@ -138,13 +164,15 @@ class UserLoginAPIView(ForceCRSFAPIView):
                     if userTest.passwordAttemptsLeft == 0:
                         userTest.accountLocked = True
                         userTest.save()
-                    return Response({"message": "Password does not match"}, status=status.HTTP_401_UNAUTHORIZED)
+                    return Response({"message": "Password does not match."}, status=status.HTTP_401_UNAUTHORIZED)
             else:
-                return Response({"message": "Incorrect data format"}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({"message": "Incorrect data format."}, status=status.HTTP_400_BAD_REQUEST)
+        elif userTest.accountPermLocked == True:
+            return Response({"message": "Account Locked, please contact an administrator."}, status=status.HTTP_403_FORBIDDEN)
         elif userTest.accountLocked == True:
-            return Response({"message": "Account Locked"}, status=status.HTTP_403_FORBIDDEN)
+            return Response({"message": "Too many attempts, please reset your password."}, status=status.HTTP_403_FORBIDDEN)
         else:
-            return Response({"message": "Username not in database"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"message": "Username not in database."}, status=status.HTTP_400_BAD_REQUEST)
 
 class UserLogout(APIView):
     permission_classes = (IsAuthenticated,)
@@ -169,7 +197,7 @@ class RestoreView(APIView):
     authentication_classes = (SessionAuthentication,)
     
 
-
+    #TODO change this to be a get request that does not use a serializer
     def post(self, request):
         serializer = UserSerializer(request.user)
         session_user = request.session.get('username')
@@ -250,7 +278,7 @@ class MFA_Email(APIView):
 
             if request_reason == "forgotpassword":
                 # Uses the random library to pick 6 digits from the choices
-                generatedOTP = ''.join(random.choices('0123456789', k=6))
+                generatedOTP = ''.join(random.choices('123456789', k=6))
                 #Find the user with the associated email and save the OTP in the OTP field
                 try:
                     user = UserInfo.objects.get(email=sendEmail)
@@ -306,12 +334,31 @@ class VerifyUser(APIView):
                     # Get the user object from the username posted = this comes from the URL (see React params)
                     userObject = UserInfo.objects.get(username=username)
                     otp_in_database = userObject.OTP
-                    if not (otp_input == otp_in_database):
+                    account_locked_out = userObject.accountPermLocked
+                    if account_locked_out:
+                        return Response({"message": "Account Locked, please contact an administrator."}, status=status.HTTP_401_UNAUTHORIZED)
+                    # Rule out the input of the standard invalid code, and lock the account if it is tried
+                    elif (otp_input == "000001"):
+                        userObject.accountPermLocked = True
+                        userObject.save()
+                        return Response({"message": "OTP Invalid, your account has been locked. "}, status=status.HTTP_401_UNAUTHORIZED)
+                    # If otp code entered incorrectly it will not verify and it will add an incorrect attempt made.
+                    elif (otp_input != otp_in_database):
+                        # Modify the OTPAttemptsLeft field in the model UserInfo
+                        userObject.OTPAttemptsLeft -= 1
+                        userObject.save()
+                        # If the value is 0, Permenantly lock the account by changing the boolean to True
+                        if userObject.OTPAttemptsLeft == 0:
+                            userObject.accountPermLocked = True
+                            userObject.save()
                         return Response({"message": "OTP Incorrect"}, status=status.HTTP_401_UNAUTHORIZED)
                     # Create a temporary session for those who have correctly input their OTP
                     create_session(request, username, ['VerifiedButNotLogged'])
                     # Use the verify function to build the response
                     verifiedResponse = self.verify(request)
+                    # Set the OTP back to standard invalid code
+                    userObject.OTP = "000001"
+                    userObject.save()
                     return verifiedResponse
             except serializers.ValidationError as e:
                 # This can be used to check the errors in the Django server

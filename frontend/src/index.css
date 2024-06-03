@@ -37,6 +37,13 @@ html {
   padding: 1rem 0.5rem;
 }
 
+main {
+  width: 100%;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-evenly;
+}
+
 section {
   width: 100%;
   max-width: 420px;

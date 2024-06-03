@@ -96,10 +96,11 @@ const VerifyUser = () => {
             navigate('/resetpassword');
         }
         catch (error){
+            let errorMessage = error.response?.data?.message;
             if (!error?.response){
                 setErrMsg('No Server Response');
             } else if (error.response?.status === 401) {
-                setErrMsg('Incorrect OTP')
+                setErrMsg(errorMessage)
             } else if (error.response?.status === 400) {
                 setErrMsg('Please enter your OTP')
             } else {

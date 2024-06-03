@@ -9,6 +9,19 @@ class RegisterSerializer(serializers.ModelSerializer):
         model = UserInfo
         fields = ['username', 'password', 'userLevel', 'email']
 
+# for adding user details to the profile
+class UserProfileSerializer(serializers.ModelSerializer):
+    #? Needed? user_info = RegisterSerializer(required=False)
+
+    class Meta:
+        model = UserProfile
+        fields = ['firstName', 'surname']
+
+# combination of the userinfo and userprofile serializers as the data is given in the same POST request
+class CombinedSerializer(serializers.Serializer):
+    user_info = RegisterSerializer()
+    user_profile = UserProfileSerializer()
+
 # For logging in a user
 class LoginSerializer(serializers.ModelSerializer):
     # The serializer for logging in a user
