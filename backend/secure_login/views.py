@@ -15,6 +15,7 @@ from datetime import datetime, timedelta
 import random
 from . encryption import *
 from django_ratelimit.decorators import ratelimit
+from django.utils.decorators import method_decorator
 
 
 import mailslurp_client
@@ -44,7 +45,7 @@ def send_otp_in_mail(user,otp):
     opts.subject = 'One Time Passcode'
     opts.body = f'Hi {user.username}, here is your OTP for secure login \n Otp is: {otp}'
     opts.is_html = True
-    test_inbox_controller.send_email('d155a520-b321-47a5-9443-31c1d85de3b5', send_email_options=opts)
+    test_inbox_controller.send_email('a412ee93-ef54-4bbc-8df2-e7f2ed3b1c57', send_email_options=opts)
 
 
     #! Uses send_mail instead of mailslurp server.
@@ -105,7 +106,7 @@ class UserLoginAPIView(ForceCRSFAPIView):
         return Response({"csrf_token": csrf_token}, status=status.HTTP_200_OK)
 
     # Block post requests from the same ip if more than 2 in past 5 minutes
-    @ratelimit(key='ip', method='POST', rate='2/5m')
+    @method_decorator(ratelimit(key='ip', method='POST', rate='110/h'))
     def post(self, request):
         # Get the username from the data
         username = request.data.get('username')
@@ -292,7 +293,7 @@ class VerifyUser(APIView):
         return response
 
     # Block post requests from the same ip if more than 2 in past 5 minutes
-    @ratelimit(key='ip', method='POST', rate='2/5m')
+    @method_decorator(ratelimit(key='ip', method='POST', rate='100/h'))
     def post(self, request):
         #Get the current user object
         user = request.user
