@@ -1,7 +1,7 @@
 from django.db import models
 from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
-from django.core.validators import MaxValueValidator, RegexValidator
+from django.core.validators import MaxValueValidator, RegexValidator, MinLengthValidator
 
 class UserInfoManager(BaseUserManager):
     def create_user(self, username, password=None):
@@ -44,3 +44,11 @@ class UserInfo(AbstractBaseUser, PermissionsMixin):
     objects = UserInfoManager()
     def __str__(self):
         return self.username
+    
+class AdminTrainingProviderDetails(models.Model):
+    company_name = models.CharField(max_length=100, unique = True)
+    company_abbr = models.CharField(max_length=3)
+    admin_signup_code = models.CharField(max_length=8, validators=[MinLengthValidator(8)])
+    tpemployee_signup_code = models.CharField(max_length=8, validators=[MinLengthValidator(8)])
+    apprentice_signup_code = models.CharField(max_length=8, validators=[MinLengthValidator(8)])
+    employer_signup_code = models.CharField(max_length=8, validators=[MinLengthValidator(8)])

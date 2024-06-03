@@ -303,28 +303,28 @@ const Register = () => {
                 {/* Info message - not visible to people looking at the form */}
                 <p id="userLevelNote" className={userLevelFocus && !validUserLevel ? "instructions" : "offscreen"}>
                     <FontAwesomeIcon icon={faInfoCircle} />
-                    Must select type of user
+                    You will have been given a code by your Training Provider. 
+                    If you have not received a code, please contact your administrator.
                 </p>
                 <label htmlFor="selectUserLevel">
-                            Select the Type of User...
+                            Registration Code:
                         </label>
-                <select id="selectUserLevel" onChange={(e) => setUserLevel(e.target.value)}>
-                    <option
-                        id="apprentice"
-                        name="userLevel"
-                        value="Apprentice">
-                    Apprentice</option>
-                    <option
-                        id="training-provider"
-                        name="userLevel"
-                        value="TrainingProvider">
-                    Training Provider</option>
-                    <option
-                        id="employer"
-                        name="userLevel"
-                        value="Employer">
-                    Employer</option>
-                </select>
+                <input
+                    type = "text"
+                    id = "selectUserLevel"
+                    
+                    /* Autocomplete off because we don't want to see previous values suggested */
+                    autoComplete = "off"
+                    /* onChange ties the input to the userLevelState */
+                    onChange={(e) => setUserLevel(e.target.value)}
+                    required
+                    /* aria-invalid will be set to true when the component loads because blank is an invalid username */
+                    aria-invalid={validUserLevel ? "false" : "true"}
+                    /* This is the final thing read by the screen reader and here we give the full requirements for the field */
+                    aria-describedby="userLevelNote"
+                    onFocus={() => setUserLevelFocus(true)}
+                    onBlur={() => setUserLevelFocus(false)}
+                />
                 
 
                 {/* No need for type=submit as when only one button in a form, that is default */}

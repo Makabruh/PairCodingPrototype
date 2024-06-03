@@ -89,6 +89,8 @@ class UserRegistrationAPIView(APIView):
             hashed_password = make_password(password)
             serializer.validated_data['password'] = hashed_password
 
+            #TODO - Convert user role code (given on registration) to actual user level
+
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

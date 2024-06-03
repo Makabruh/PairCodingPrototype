@@ -4,10 +4,11 @@ from django.contrib.auth import get_user_model, authenticate
 
 # For registering a user
 class RegisterSerializer(serializers.ModelSerializer):
+    userLevelOnRegister = serializers.CharField()
     # The serializer for creating a user
     class Meta:
         model = UserInfo
-        fields = ['username', 'password', 'userLevel', 'email']
+        fields = ['username', 'password', 'userLevelOnRegister', 'email']
 
 # For logging in a user
 class LoginSerializer(serializers.ModelSerializer):
