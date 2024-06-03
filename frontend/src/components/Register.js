@@ -107,7 +107,6 @@ const Register = () => {
     const GetSignUpData = () => {
         AxiosInstance.get('trainingprovider').then((res) => {
             setTrainingProvider(res.data)
-            console.log(res.data)
         })
     }
 
