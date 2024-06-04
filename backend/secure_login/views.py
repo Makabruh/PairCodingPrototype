@@ -9,14 +9,13 @@ from rest_framework import permissions, status
 from django.contrib.auth.hashers import make_password, check_password
 from django.middleware.csrf import get_token
 from rest_framework.permissions import IsAuthenticated
-from django.core.mail import send_mail
 from django.http import JsonResponse
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import random
 from . encryption import *
 from django_ratelimit.decorators import ratelimit
 from django.utils.decorators import method_decorator
-
+from http import cookies
 
 import mailslurp_client
 
@@ -191,6 +190,17 @@ class PasswordResetView(APIView):
         # Backend code was stored in the session during VerifyUser view
         # Frontend code was posted as a HttpOnly cookie (duration 15 mins)
         verificationCodeBackend = request.session.get('verification')
+
+        #TODO - Check cookie expiration here
+        rawvalue = request.META['HTTP_COOKIE']
+        c = cookies.SimpleCookie()
+        c.load(rawvalue)
+        print("All cookies:", c)
+        cookie = c['accountVerification']
+        cookieExpiration = cookie['expires']
+        cookie_expiration_datetime = datetime.fromisoformat(cookieExpiration.replace("Z", "+00:00"))
+        print("cookie expires: " + cookie_expiration_datetime)
+
         cookieValue = request.COOKIES.get('accountVerification').strip()
 
         #TODO - Better way of trimming string
@@ -257,10 +267,13 @@ class MFA_Email(APIView):
             if request_reason == "forgotpassword":
                 # Uses the random library to pick 6 digits from the choices
                 generatedOTP = ''.join(random.choices('0123456789', k=6))
+                #Create an expiration time 60 minutes from now using UTC as this will be stored in the database
+                expiration_time = datetime.now(timezone.utc) + timedelta(minutes=60)
                 #Find the user with the associated email and save the OTP in the OTP field
                 try:
                     user = UserInfo.objects.get(email=sendEmail)
                     user.OTP = generatedOTP
+                    user.OTP_expiration = expiration_time
                     user.save()
                     #Save the OTP to the user
 
@@ -288,10 +301,10 @@ class VerifyUser(APIView):
         request.session['verification'] = verificationCode
         # Build the response
         response = JsonResponse({"message": "Verified User"}, status=status.HTTP_200_OK)
-        # Set the HTTPOnly cookie with an expiration time of 15 mins
-        expiration_time = datetime.now() + timedelta(minutes=15)
+        # Set the HTTPOnly cookie with an expiration time of 15 mins using max_age
+        max_age = 900
         # Build the HttpOnly cookie containing the verification code
-        response.set_cookie('accountVerification', encryptedVerificationCode, httponly=True, expires=expiration_time)
+        response.set_cookie('accountVerification', encryptedVerificationCode, httponly=True, max_age=max_age)
         return response
 
     # Block post requests from the same ip if more than 2 in past 5 minutes
@@ -313,8 +326,11 @@ class VerifyUser(APIView):
                     username = request.data.get('username')
                     # Get the user object from the username posted = this comes from the URL (see React params)
                     userObject = UserInfo.objects.get(username=username)
+                    #Fetch the OTP and its expiration from this object
                     otp_in_database = userObject.OTP
-                    if not (otp_input == otp_in_database):
+                    otp_expiration_in_database = userObject.OTP_expiration
+                    #Check that the OTP and expiration are valid
+                    if not (otp_input == otp_in_database) or (datetime.now(timezone.utc) > otp_expiration_in_database):
                         return Response({"message": "OTP Incorrect"}, status=status.HTTP_401_UNAUTHORIZED)
                     # Create a temporary session for those who have correctly input their OTP
                     create_session(request, username, ['VerifiedButNotLogged'])
