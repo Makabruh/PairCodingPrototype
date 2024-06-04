@@ -12,8 +12,11 @@ from rest_framework.permissions import IsAuthenticated
 from django.core.mail import send_mail
 from django.http import JsonResponse
 from datetime import datetime, timedelta
+from pytz import timezone
 import random
 from . encryption import *
+from django_ratelimit.decorators import ratelimit
+from django.utils.decorators import method_decorator
 
 import mailslurp_client
 
@@ -129,50 +132,52 @@ class UserLoginAPIView(ForceCRSFAPIView):
         #? Remove the CSRF Token from the response??
         return Response({"csrf_token": csrf_token}, status=status.HTTP_200_OK)
 
+    @method_decorator(ratelimit(key='ip', rate='5/m', method='POST'))
     def post(self, request):
-        # Get the username from the data
-        #? As the serializer has not yet been validated we cannot use: serializer.validated_data.get('username')
-        username = request.data.get('username')
-        # Get the actual user object in order to modify values from the model
-        userTest = UserInfo.objects.get(username=username)
-        # If a user object is found and the account is not locked
-        if userTest.username and userTest.accountLocked == False and userTest.accountPermLocked == False:
-            # Instantiate the serializer
-            serializer = LoginSerializer(data=request.data)
-            # Check the data format with the serializer
-            if serializer.is_valid(raise_exception=True):
-                # Call the check_user function within the serializer
-                authenticatedUser = serializer.check_user(request.data)
-                # Check that there is a user object returned from this function - this will be the authenticated user
-                if authenticatedUser:
-                    #refresh = RefreshToken.for_user(user)
-                    #access_token = str(refresh.access_token)
-                    # Use the Django login function that creates a sessionid and token for the frontend and backend
-                    login(request, authenticatedUser)
-                    # Create a session storing the username and the userLevel within the session
-                    create_session(request, username, ["AuthUser", userTest.userLevel])
-                    # Reset the Password Attempts Left back to 3 on a successful login
-                    userTest.passwordAttemptsLeft = 3
-                    userTest.save()
-                    # Return the userLevel to the frontend
-                    return Response({"userlevel": userTest.userLevel}, status=status.HTTP_200_OK)
-                else:
-                    # Modify the passwordAttemptsLeft field in the model UserInfo
-                    userTest.passwordAttemptsLeft -= 1
-                    userTest.save()
-                    # If the value is 0, lock the account by changing the boolean to True
-                    if userTest.passwordAttemptsLeft == 0:
-                        userTest.accountLocked = True
+        # Instantiate the serializer
+        serializer = LoginSerializer(data=request.data)
+        # Check the data format with the serializer
+        if serializer.is_valid(raise_exception=True):
+            # Get the username from the validated serializer
+            username = serializer.validated_data.get('username')
+            # Get the actual user object in order to modify values from the model
+            if (UserInfo.objects.filter(username=username).exists()):
+                userTest = UserInfo.objects.get(username=username)
+                # If a user object is found and the account is not locked
+                if userTest.username and userTest.accountLocked == False and userTest.accountPermLocked == False:
+                    # Call the check_user function within the serializer
+                    authenticatedUser = serializer.check_user(request.data)
+                    # Check that there is a user object returned from this function - this will be the authenticated user
+                    if authenticatedUser:
+                        #refresh = RefreshToken.for_user(user)
+                        #access_token = str(refresh.access_token)
+                        # Use the Django login function that creates a sessionid and token for the frontend and backend
+                        login(request, authenticatedUser)
+                        # Create a session storing the username and the userLevel within the session
+                        create_session(request, username, ["AuthUser", userTest.userLevel])
+                        # Reset the Password Attempts Left back to 3 on a successful login
+                        userTest.passwordAttemptsLeft = 3
                         userTest.save()
-                    return Response({"message": "Password does not match."}, status=status.HTTP_401_UNAUTHORIZED)
+                        # Return the userLevel to the frontend
+                        return Response({"userlevel": userTest.userLevel}, status=status.HTTP_200_OK)
+                    else:
+                        # Modify the passwordAttemptsLeft field in the model UserInfo
+                        userTest.passwordAttemptsLeft -= 1
+                        userTest.save()
+                        # If the value is 0, lock the account by changing the boolean to True
+                        if userTest.passwordAttemptsLeft == 0:
+                            userTest.accountLocked = True
+                            userTest.save()
+                        return Response({"message": "Password does not match."}, status=status.HTTP_401_UNAUTHORIZED)
+                elif userTest.accountPermLocked == True:
+                    return Response({"message": "Account Locked, please contact an administrator."}, status=status.HTTP_403_FORBIDDEN)
+                elif userTest.accountLocked == True:
+                    return Response({"message": "Too many attempts, please reset your password."}, status=status.HTTP_403_FORBIDDEN)
             else:
-                return Response({"message": "Incorrect data format."}, status=status.HTTP_400_BAD_REQUEST)
-        elif userTest.accountPermLocked == True:
-            return Response({"message": "Account Locked, please contact an administrator."}, status=status.HTTP_403_FORBIDDEN)
-        elif userTest.accountLocked == True:
-            return Response({"message": "Too many attempts, please reset your password."}, status=status.HTTP_403_FORBIDDEN)
+                return Response({"message": "Username not in database."}, status=status.HTTP_400_BAD_REQUEST)
         else:
-            return Response({"message": "Username not in database."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"message": "Incorrect data format."}, status=status.HTTP_400_BAD_REQUEST)
+
 
 class UserLogout(APIView):
     permission_classes = (IsAuthenticated,)
@@ -212,6 +217,8 @@ class PasswordResetView(APIView):
         # Get the verification codes from the backend and frontend - these will need to match
         # Backend code was stored in the session during VerifyUser view
         # Frontend code was posted as a HttpOnly cookie (duration 15 mins)
+
+        #! Need an error message if the cookie is expired then .strip() function will not work.
         verificationCodeBackend = request.session.get('verification')
         cookieValue = request.COOKIES.get('accountVerification').strip()
 
@@ -283,6 +290,7 @@ class MFA_Email(APIView):
                 try:
                     user = UserInfo.objects.get(email=sendEmail)
                     user.OTP = generatedOTP
+                    user.OTP_expiry = datetime.now(timezone('UTC')) + timedelta(minutes=1)
                     user.save()
                     #Save the OTP to the user
 
@@ -290,7 +298,6 @@ class MFA_Email(APIView):
 
                 #If there is no user with this email
                 except UserInfo.DoesNotExist:
-                    print("user not found")
                     return Response({"message": "No user with this email"}, status=status.HTTP_400_BAD_REQUEST)
             return Response({"message": "Email will be sent", 'username': user.username} , status=status.HTTP_200_OK)
         else:
@@ -310,12 +317,12 @@ class VerifyUser(APIView):
         request.session['verification'] = verificationCode
         # Build the response
         response = JsonResponse({"message": "Verified User"}, status=status.HTTP_200_OK)
-        # Set the HTTPOnly cookie with an expiration time of 15 mins
-        expiration_time = datetime.now() + timedelta(minutes=15)
         # Build the HttpOnly cookie containing the verification code
-        response.set_cookie('accountVerification', encryptedVerificationCode, httponly=True, expires=expiration_time)
+        # Using Max Age instead of expiry due to time region differences setting the time to an hour forwards.
+        response.set_cookie('accountVerification', encryptedVerificationCode, httponly=True, max_age=900)
         return response
 
+    @method_decorator(ratelimit(key='ip', rate='5/m', method='POST'))
     def post(self, request):
         #Get the current user object
         user = request.user
@@ -335,6 +342,11 @@ class VerifyUser(APIView):
                     userObject = UserInfo.objects.get(username=username)
                     otp_in_database = userObject.OTP
                     account_locked_out = userObject.accountPermLocked
+                    # Check to see if the OTP code has expired
+                    expired_otp = False
+                    if (datetime.now(timezone('UTC')) > userObject.OTP_expiry):
+                        expired_otp = True
+
                     if account_locked_out:
                         return Response({"message": "Account Locked, please contact an administrator."}, status=status.HTTP_401_UNAUTHORIZED)
                     # Rule out the input of the standard invalid code, and lock the account if it is tried
@@ -342,6 +354,11 @@ class VerifyUser(APIView):
                         userObject.accountPermLocked = True
                         userObject.save()
                         return Response({"message": "OTP Invalid, your account has been locked. "}, status=status.HTTP_401_UNAUTHORIZED)
+                    # If the OTP code has expire resets the OTP to default.
+                    elif (expired_otp == True):
+                        userObject.OTP = "000001"
+                        userObject.save()
+                        return Response({"message": "OTP expired, please request another. "}, status=status.HTTP_401_UNAUTHORIZED)
                     # If otp code entered incorrectly it will not verify and it will add an incorrect attempt made.
                     elif (otp_input != otp_in_database):
                         # Modify the OTPAttemptsLeft field in the model UserInfo

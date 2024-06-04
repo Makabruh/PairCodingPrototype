@@ -39,6 +39,7 @@ class UserInfo(AbstractBaseUser, PermissionsMixin):
     #OTP must be 6 characters, defaults to '000001'
     OTP = models.CharField(max_length=6, default='000001', validators=[OTP_validator], blank=True)
     OTPAttemptsLeft = models.PositiveIntegerField(default = 3, validators=[MaxValueValidator(3)])
+    OTP_expiry = models.DateTimeField(blank=True, null=True)
     # This needs to be introduced to manage previous devices but must be able to be null on sign up
     #!authenticatedDevices = models.JSONField()
     USERNAME_FIELD = 'username'
